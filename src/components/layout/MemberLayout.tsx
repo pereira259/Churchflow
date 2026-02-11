@@ -3,7 +3,7 @@ import { Sidebar } from './Sidebar';
 import { TopNav } from './Sidebar';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { UsersRound, Home, Calendar, QrCode, User } from 'lucide-react';
+import { UsersRound, Home, Calendar, QrCode, User, BookOpen } from 'lucide-react';
 
 interface MemberLayoutProps {
     children: ReactNode;
@@ -15,9 +15,9 @@ export function MemberLayout({ children }: MemberLayoutProps) {
     // Mobile Nav Items (kept for mobile view only)
     const mobileNavItems = [
         { name: 'Início', href: '/membro', icon: Home },
-        { name: 'Grupos', href: '/grupos', icon: UsersRound },
+        { name: 'Grupos', href: '/membro/grupos', icon: UsersRound },
+        { name: 'Estudos', href: '/membro/estudos', icon: BookOpen, isAction: true },
         { name: 'Agenda', href: '/membro/agenda', icon: Calendar },
-        { name: 'Check-in', href: '/membro/checkin', icon: QrCode, isAction: true },
         { name: 'Perfil', href: '/membro/perfil', icon: User },
     ];
 
@@ -52,13 +52,13 @@ export function MemberLayout({ children }: MemberLayoutProps) {
 
                 {/* Page Content */}
                 <main className="flex-1 overflow-y-auto relative scrollbar-thin scrollbar-thumb-slate-200 scrollbar-track-transparent">
-                    <div className="h-full page-entrance">
+                    <div className="h-full page-entrance pb-20 md:pb-0">
                         {children}
                     </div>
                 </main>
 
                 {/* Mobile Bottom Nav */}
-                <nav className="md:hidden flex items-center justify-around bg-white border-t border-slate-100 h-16 shrink-0 px-2 safe-area-bottom">
+                <nav className="md:hidden flex items-center justify-around bg-white border-t border-slate-100 h-16 shrink-0 px-2 safe-area-bottom fixed bottom-0 w-full z-50">
                     {mobileNavItems.map((item) => {
                         const isActive = location.pathname === item.href;
                         return (
@@ -71,8 +71,8 @@ export function MemberLayout({ children }: MemberLayoutProps) {
                                 )}
                             >
                                 {item.isAction ? (
-                                    <div className="absolute -top-6 bg-[#1e1b4b] text-[#d4af37] p-2 rounded-full shadow-lg border-4 border-[#fdfbf7]">
-                                        <item.icon className="h-6 w-6" strokeWidth={1.5} />
+                                    <div className="absolute -top-6 bg-[#1e1b4b] text-[#d4af37] p-3 rounded-full shadow-xl border-4 border-[#fdfbf7] active:scale-95 transition-transform">
+                                        <item.icon className="h-6 w-6" strokeWidth={2} />
                                     </div>
                                 ) : (
                                     <>
