@@ -38,6 +38,7 @@ import { MemberProfilePage } from './pages/member/MemberProfilePage';
 import { BiblePage } from './pages/BiblePage';
 import { MemberCheckinPage } from './pages/member/MemberCheckinPage';
 import { AwaitingApprovalPage } from './pages/AwaitingApprovalPage';
+import { MemberStudiesPage } from './pages/member/MemberStudiesPage';
 
 // Componente para cuidar do redirecionamento na raiz (/)
 // sem perder o hash de autenticação do Supabase/Google
@@ -193,6 +194,13 @@ export default function App() {
                                 <ProtectedRoute>
                                     <ProfileGate>
                                         <MemberCheckinPage />
+                                    </ProfileGate>
+                                </ProtectedRoute>
+                            } />
+                            <Route path="/membro/estudos" element={
+                                <ProtectedRoute>
+                                    <ProfileGate>
+                                        <MemberStudiesPage />
                                     </ProfileGate>
                                 </ProtectedRoute>
                             } />

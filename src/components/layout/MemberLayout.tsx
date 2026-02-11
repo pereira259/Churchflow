@@ -3,7 +3,7 @@ import { Sidebar } from './Sidebar';
 import { TopNav } from './Sidebar';
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { UsersRound, Home, Calendar, QrCode, User, BookOpen } from 'lucide-react';
+import { UsersRound, Home, Calendar, User, BookOpen } from 'lucide-react';
 
 interface MemberLayoutProps {
     children: ReactNode;
@@ -15,7 +15,7 @@ export function MemberLayout({ children }: MemberLayoutProps) {
     // Mobile Nav Items (kept for mobile view only)
     const mobileNavItems = [
         { name: 'Início', href: '/membro', icon: Home },
-        { name: 'Grupos', href: '/membro/grupos', icon: UsersRound },
+        { name: 'Grupos', href: '/grupos', icon: UsersRound },
         { name: 'Estudos', href: '/membro/estudos', icon: BookOpen, isAction: true },
         { name: 'Agenda', href: '/membro/agenda', icon: Calendar },
         { name: 'Perfil', href: '/membro/perfil', icon: User },
