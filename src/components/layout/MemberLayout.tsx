@@ -23,7 +23,7 @@ export function MemberLayout({ children }: MemberLayoutProps) {
 
 
     return (
-        <div className="h-screen w-screen bg-[#fdfbf7] text-slate-800 font-sans selection:bg-[#d4af37]/30 selection:text-[#d4af37] overflow-hidden flex">
+        <div className="h-[100dvh] w-screen bg-[#fdfbf7] text-slate-800 font-sans selection:bg-[#d4af37]/30 selection:text-[#d4af37] overflow-hidden flex fixed inset-0">
             {/* Unified Premium Sidebar (Hidden on Mobile) */}
             <div className="hidden md:flex flex-none w-20">
                 <Sidebar />
@@ -40,10 +40,10 @@ export function MemberLayout({ children }: MemberLayoutProps) {
                 </header>
 
                 {/* Mobile Header (Visible only on mobile) */}
-                <header className="md:hidden h-16 bg-white border-b border-slate-100 flex items-center justify-between px-4 shrink-0">
+                <header className="md:hidden h-14 bg-white/95 backdrop-blur-md border-b border-slate-100 flex items-center justify-between px-4 shrink-0 z-50 sticky top-0 shadow-sm">
                     <Link to="/membro" className="flex items-center gap-2">
-                        <img src="/logo.png" alt="Logo" className="h-8 w-8 object-contain" />
-                        <span className="font-display font-bold text-[#1e1b4b] italic">Church<span className="text-[#d4af37]">Flow</span></span>
+                        <img src="/churchflow-logo.png" alt="Logo" className="h-8 w-auto object-contain" />
+                        <span className="font-display font-bold text-[#1e1b4b] italic text-lg">Church<span className="text-[#d4af37]">Flow</span></span>
                     </Link>
                     <button className="text-slate-600">
                         <UsersRound className="h-6 w-6" />
