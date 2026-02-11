@@ -9,7 +9,7 @@ export function ChurchFlowLogo({ className = "w-16 h-16" }: { className?: string
             transition={{ duration: 0.5 }}
         >
             <img
-                src="/logo.png"
+                src="/churchflow-logo.png"
                 alt="ChurchFlow Logo"
                 className="w-full h-full object-contain"
             />

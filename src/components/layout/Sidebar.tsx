@@ -149,7 +149,7 @@ export function Sidebar() {
           className="my-4 relative group/logo"
         >
           <div className="h-10 w-10 flex items-center justify-center transition-all duration-500 group-hover/logo:scale-110">
-            <img src="/logo.png" alt="ChurchFlow Logo" className="h-full w-full object-contain" />
+            <img src="/churchflow-logo.png" alt="ChurchFlow Logo" className="h-full w-full object-contain" />
           </div>
         </Link>
 
