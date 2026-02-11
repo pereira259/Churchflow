@@ -1,0 +1,217 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --radius: 2rem;
+    --background: 40 20% 96%;
+    --foreground: 160 17% 19%;
+    --card: 0 0% 100%;
+    --card-foreground: 160 17% 19%;
+    --primary: 150 12% 54%;
+    --primary-foreground: 40 20% 96%;
+    --secondary: 200 18% 51%;
+    --secondary-foreground: 40 20% 96%;
+    --accent: 43 46% 59%;
+    --accent-foreground: 160 17% 19%;
+    --border: 40 14% 88%;
+    --input: 40 14% 88%;
+    --ring: 150 12% 54%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    scroll-behavior: smooth;
+    font-size: 16px;
+  }
+
+  body {
+    @apply bg-cream-50 text-charcoal-900 overflow-x-hidden;
+    background:
+      radial-gradient(at 0% 0%, rgba(122, 154, 138, 0.12) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(201, 169, 98, 0.08) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, rgba(30, 27, 75, 0.05) 0px, transparent 50%),
+      #faf9f6;
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  .font-display {
+    font-family: 'Playfair Display', Georgia, serif;
+    @apply tracking-tight;
+  }
+}
+
+@layer components {
+
+  /* Custom Scrollbar - Hidden but functional */
+  .custom-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .custom-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .glass {
+    @apply bg-white/40 backdrop-blur-[40px] border border-white/50;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+  }
+
+  .glass-card {
+    @apply bg-white/60 backdrop-blur-[40px] border border-white/40 transition-all duration-500 rounded-4xl;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04);
+  }
+
+  .btn-premium {
+    @apply relative overflow-hidden bg-marinho text-white px-6 py-3.5 rounded-2xl font-semibold transition-all duration-300 active:scale-95;
+    background: linear-gradient(135deg, #1e1b4b 0%, #151336 100%);
+  }
+
+  .btn-premium:active {
+    box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+  }
+
+  .btn-premium:hover {
+    @apply translate-y-[-2px];
+    background: linear-gradient(135deg, #25225c 0%, #1a173d 100%);
+    box-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.15);
+  }
+
+  .btn-premium:active {
+    transform: translateY(1px);
+  }
+
+  .card-3d {
+    @apply glass-card;
+    transform-style: preserve-3d;
+  }
+
+  .card-3d:hover {
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.08);
+    /* Slightly more pronounced on hover but keeping it clean */
+  }
+
+  .input-premium {
+    @apply w-full bg-white/50 backdrop-blur-md border border-white/60 rounded-2xl px-5 py-4 focus:bg-white focus:ring-2 ring-sage/30 outline-none transition-all;
+    box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+  }
+}
+
+@layer utilities {
+  .texture-engraving {
+    position: relative;
+  }
+
+  .texture-engraving::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M10 10L90 90M90 10L10 90' stroke='%231e1b4b' stroke-opacity='0.02' stroke-width='0.5'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .text-gradient-luxury {
+    @apply bg-clip-text text-transparent bg-gradient-to-br from-marinho via-marinho-light to-sage-600;
+  }
+}
+
+.page-entrance {
+  animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-cream-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-marinho/10 rounded-full hover:bg-marinho/20 transition-colors;
+}
+/* Cinematic Tutorial Theme */
+.driver-popover.churchflow-premium-tour {
+    background-color: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1.5rem;
+    color: white;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    padding: 2px;
+}
+
+.driver-popover.churchflow-premium-tour .driver-popover-title {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #d4af37;
+    margin-bottom: 0.5rem;
+    font-family: 'Outfit', sans-serif;
+    font-style: italic;
+}
+
+.driver-popover.churchflow-premium-tour .driver-popover-description {
+    font-size: 0.9rem;
+    color: #cbd5e1;
+    line-height: 1.5;
+}
+
+.driver-popover.churchflow-premium-tour button {
+    border-radius: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 0.75rem;
+    transition: all 0.2s;
+}
+
+.driver-popover.churchflow-premium-tour .driver-popover-next-btn {
+    background-color: #d4af37 !important;
+    color: #1e1b4b !important;
+    border: none !important;
+    text-shadow: none !important;
+    padding: 8px 16px !important;
+}
+
+.driver-popover.churchflow-premium-tour .driver-popover-next-btn:hover {
+    background-color: #bfa035 !important;
+    transform: translateY(-1px);
+}
+
+.driver-popover.churchflow-premium-tour .driver-popover-prev-btn,
+.driver-popover.churchflow-premium-tour .driver-popover-close-btn {
+    color: #94a3b8 !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    background: transparent !important;
+}
+
+.driver-popover.churchflow-premium-tour .driver-popover-prev-btn:hover,
+.driver-popover.churchflow-premium-tour .driver-popover-close-btn:hover {
+    background: rgba(255,255,255,0.05) !important;
+    color: white !important;
+}
+
+/* Tutorial Spotlight Animation */
+.driver-active-element {
+    box-shadow: 0 0 0 4px #d4af37, 0 0 0 5000px rgba(0, 0, 0, 0.8) !important;
+    border-radius: 1rem;
+    transition: all 0.3s ease;
+}
+

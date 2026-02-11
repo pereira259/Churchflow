@@ -1,0 +1,29 @@
+@media print {
+    /* Hide non-printable elements */
+    aside, /* Sidebar */
+    nav, /* TopNav */
+    button, /* Action buttons */
+    .no-print {
+        display: none !important;
+    }
+
+    /* Reset layout for print */
+    main {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: 100% !important;
+    }
+
+    /* Ensure background colors print */
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    /* Expand containers */
+    .card-3d, .glass {
+        border: 1px solid #ddd !important;
+        box-shadow: none !important;
+        break-inside: avoid;
+    }
+}
