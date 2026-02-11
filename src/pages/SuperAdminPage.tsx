@@ -40,7 +40,8 @@ export function SuperAdminPage() {
     const [pendingChurches, setPendingChurches] = useState<PendingChurch[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
-    const [activeTab, setActiveTab] = useState<'users' | 'churches'>('churches');
+    const [activeTab, setActiveTab] = useState<'users' | 'churches' | 'all_churches'>('churches');
+    const [allChurches, setAllChurches] = useState<any[]>([]);
     const [processingId, setProcessingId] = useState<string | null>(null);
     const [toast, setToast] = useState<Toast | null>(null);
 
@@ -79,6 +80,15 @@ export function SuperAdminPage() {
                 .select('id, name, city, state, email, phone, requested_at, requested_by')
                 .eq('status', 'pending_approval')
                 .order('requested_at', { ascending: false });
+
+            // Fetch All Churches
+            const { data: allChurchesData, error: allChurchesError } = await supabase
+                .from('churches')
+                .select('id, name, city, state, email, status, created_at, requested_at, requested_by')
+                .order('created_at', { ascending: false });
+
+            if (allChurchesError) throw allChurchesError;
+            setAllChurches(allChurchesData || []);
 
             if (churchesError) {
                 console.error('❌ Erro ao buscar igrejas pendentes:', churchesError);
@@ -254,6 +264,55 @@ export function SuperAdminPage() {
         }
     };
 
+    const handleToggleStatus = async (churchId: string, currentStatus: string) => {
+        const newStatus = currentStatus === 'active' ? 'suspended' : 'active';
+        if (!confirm(`Tem certeza que deseja alterar o status de ${currentStatus} para ${newStatus}?`)) return;
+
+        setProcessingId(churchId);
+        try {
+            const { error } = await supabase
+                .from('churches')
+                .update({ status: newStatus })
+                .eq('id', churchId);
+
+            if (error) throw error;
+
+            await fetchData();
+            showToast('success', `Status alterado para ${newStatus}`);
+        } catch (err: any) {
+            console.error('Erro ao alterar status:', err);
+            showToast('error', 'Erro: ' + err.message);
+        } finally {
+            setProcessingId(null);
+        }
+    };
+
+    const handleDelete = async (churchId: string) => {
+        if (!confirm('ATENÇÃO: Isso excluirá PERMANENTEMENTE a igreja e todos os seus dados. Tem certeza?')) return;
+
+        const confirmName = prompt('Digite "DELETAR" para confirmar:');
+        if (confirmName !== 'DELETAR') return;
+
+        setProcessingId(churchId);
+        try {
+            // Delete church (cascade should handle related data if configured, otherwise might fail)
+            const { error } = await supabase
+                .from('churches')
+                .delete()
+                .eq('id', churchId);
+
+            if (error) throw error;
+
+            await fetchData();
+            showToast('success', 'Igreja excluída permanentemente.');
+        } catch (err: any) {
+            console.error('Erro ao excluir:', err);
+            showToast('error', 'Erro ao excluir: ' + err.message);
+        } finally {
+            setProcessingId(null);
+        }
+    };
+
     const filteredUsers = users.filter(u =>
         u.email?.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -261,6 +320,11 @@ export function SuperAdminPage() {
     const filteredChurches = pendingChurches.filter(c =>
         c.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         c.city?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    const filteredAllChurches = allChurches.filter(c =>
+        (c.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (c.city || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     if (loading) {
@@ -324,6 +388,16 @@ export function SuperAdminPage() {
                         <User className="w-4 h-4 inline-block mr-2" />
                         Usuários
                     </button>
+                    <button
+                        onClick={() => setActiveTab('all_churches')}
+                        className={`px-6 py-3 rounded-xl font-bold text-sm uppercase tracking-wider transition-all ${activeTab === 'all_churches'
+                            ? 'bg-[#d4af37] text-[#1e1b4b]'
+                            : 'bg-white/5 text-slate-400 hover:bg-white/10'
+                            }`}
+                    >
+                        <Church className="w-4 h-4 inline-block mr-2" />
+                        Todas Igrejas
+                    </button>
                 </div>
 
                 {/* Main Card */}
@@ -344,6 +418,8 @@ export function SuperAdminPage() {
                         <div className="hidden md:block text-slate-500 text-sm ml-auto">
                             {activeTab === 'churches' ? (
                                 <>Total: <span className="text-white font-bold">{pendingChurches.length}</span> pendentes</>
+                            ) : activeTab === 'all_churches' ? (
+                                <>Total: <span className="text-white font-bold">{allChurches.length}</span> igrejas</>
                             ) : (
                                 <>Total: <span className="text-white font-bold">{users.length}</span> usuários</>
                             )}

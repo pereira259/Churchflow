@@ -1,0 +1,23 @@
+# Tasks
+
+- [x] Fix permissions for member saving in new MembrosPage
+- [x] Verify role definitions and explain to user
+- [x] Delete Leader Dashboard (Redundancy Removal)
+    - [x] Remove route `/lider` from `App.tsx`
+    - [x] Remove sidebar link from `Sidebar.tsx`
+    - [x] Delete file `src/pages/lider/LiderDashboardPage.tsx`
+- [x] **Enhance Super Admin Panel** <!-- id: 4 -->
+    - [x] Add "All Churches" tab <!-- id: 5 -->
+    - [x] Fetch all churches data <!-- id: 6 -->
+    - [ ] **Debug: Fix empty list rendering** <!-- id: 7 -->
+    - [ ] Implement "Delete Church" functionality <!-- id: 8 -->
+    - [ ] Verify styling and actions <!-- id: 9 -->
+- [x] Replace native 'confirm' in MinisteriosPage with Custom UI Modal
+- [x] Refine Finance Transaction Modal (FinanceiroPage.tsx)
+    - [x] Implement Member Search/Select integration for "Nome do Ofertante"
+    - [x] Fix Decimal Formatting for "Valor"
+    - [x] Persist and Display "Nome do Ofertante" in transactions list and history
+- [x] **Mobile UI/UX Improvements** <!-- id: 10 -->
+    - [x] Fix DashboardLayout usage on mobile pages
+    - [x] Refactor Member Profile Card for mobile responsiveness
+    - [x] Verify Mobile Navigation and Touch targets

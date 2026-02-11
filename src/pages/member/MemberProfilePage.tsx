@@ -1,4 +1,4 @@
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { MemberLayout } from '@/components/layout/MemberLayout';
 
 import { motion } from 'framer-motion';
 import {
@@ -412,7 +412,7 @@ export function MemberProfilePage() {
     const completedQuestsCount = quests.filter(q => q.completed).length;
 
     return (
-        <DashboardLayout>
+        <MemberLayout>
             <motion.div
                 variants={container}
                 initial={loading && !memberData ? "hidden" : false}
@@ -436,48 +436,49 @@ export function MemberProfilePage() {
                         {/* Column 1: Pure Identity (Left Side - 4 cols) */}
                         <motion.div variants={item} className="lg:col-span-4 flex flex-col gap-4">
                             {/* Premium Profile Card */}
-                            <div className="bg-white/95 backdrop-blur-xl rounded-[2rem] shadow-xl shadow-indigo-950/5 border border-white/60 p-6 flex flex-col items-center text-center relative overflow-hidden group">
-                                <div className="absolute top-0 inset-x-0 h-32 bg-gradient-to-b from-slate-50 to-transparent opacity-80" />
+                            <div className="bg-white/95 backdrop-blur-xl rounded-[1.5rem] md:rounded-[2rem] shadow-xl shadow-indigo-950/5 border border-white/60 p-4 md:p-6 flex flex-col items-center text-center relative overflow-hidden group">
+                                <div className="absolute top-0 inset-x-0 h-24 md:h-32 bg-gradient-to-b from-slate-50 to-transparent opacity-80" />
 
                                 {/* Avatar with Status Badge */}
-                                <div className="relative mb-4 mt-2">
-                                    <div className="w-28 h-28 rounded-full border-[4px] border-white shadow-2xl bg-gradient-to-br from-[#d4af37] to-[#b39025] flex items-center justify-center text-[#1e1b4b] font-display text-4xl font-bold italic relative overflow-hidden ring-1 ring-slate-100/50">
+                                <div className="relative mb-3 md:mb-4 mt-1 md:mt-2">
+                                    <div className="w-20 h-20 md:w-28 md:h-28 rounded-full border-[3px] md:border-[4px] border-white shadow-2xl bg-gradient-to-br from-[#d4af37] to-[#b39025] flex items-center justify-center text-[#1e1b4b] font-display text-2xl md:text-4xl font-bold italic relative overflow-hidden ring-1 ring-slate-100/50">
                                         {userProfile.avatar_url ? (
                                             <img src={userProfile.avatar_url} alt={userProfile.full_name} className="w-full h-full object-cover" />
                                         ) : (
                                             getInitials(userProfile.full_name)
                                         )}
                                         <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all flex items-center justify-center cursor-pointer backdrop-blur-sm">
-                                            <Camera className="w-8 h-8 text-white drop-shadow-md" />
+                                            <Camera className="w-6 h-6 md:w-8 md:h-8 text-white drop-shadow-md" />
                                             <input type="file" className="hidden" accept="image/*" onChange={handleAvatarFileSelect} disabled={isUploading} />
                                         </label>
                                     </div>
 
                                     {/* Status Dot */}
-                                    <div className="absolute bottom-2 right-2 w-6 h-6 bg-emerald-500 border-[4px] border-white rounded-full shadow-lg tooltip-trigger" title="Membro Ativo"></div>
+                                    <div className="absolute bottom-1 right-1 md:bottom-2 md:right-2 w-5 h-5 md:w-6 md:h-6 bg-emerald-500 border-[3px] md:border-[4px] border-white rounded-full shadow-lg tooltip-trigger" title="Membro Ativo"></div>
 
-                                    <button onClick={() => setIsEditModalOpen(true)} className="absolute bottom-1 -left-1 w-8 h-8 rounded-full bg-slate-900 text-white border-[2px] border-white flex items-center justify-center shadow-lg hover:bg-slate-700 transition-colors z-10">
-                                        <Edit3 className="w-3.5 h-3.5" />
+                                    <button onClick={() => setIsEditModalOpen(true)} className="absolute bottom-0 -left-0 md:bottom-1 md:-left-1 w-7 h-7 md:w-8 md:h-8 rounded-full bg-slate-900 text-white border-[2px] border-white flex items-center justify-center shadow-lg hover:bg-slate-700 transition-colors z-10">
+                                        <Edit3 className="w-3 h-3 md:w-3.5 md:h-3.5" />
                                     </button>
                                 </div>
 
                                 {/* Identity Info */}
-                                <h1 className="font-display text-2xl font-bold italic text-[#1e1b4b] leading-tight mb-1.5 tracking-tight">{userProfile.full_name}</h1>
+                                <h1 className="font-display text-lg md:text-2xl font-bold italic text-[#1e1b4b] leading-tight mb-1 tracking-tight">{userProfile.full_name}</h1>
 
-                                <div className="flex flex-wrap justify-center items-center gap-2 mb-6">
-                                    <span className="px-3 py-1 rounded-full bg-[#1e1b4b]/5 border border-[#1e1b4b]/10 text-[#1e1b4b] text-[10px] font-black uppercase tracking-[0.15em]">{getRoleLabel(userProfile.role)}</span>
+                                <div className="flex flex-wrap justify-center items-center gap-1.5 md:gap-2 mb-4 md:mb-6">
+                                    <span className="px-2.5 py-0.5 md:px-3 md:py-1 rounded-full bg-[#1e1b4b]/5 border border-[#1e1b4b]/10 text-[#1e1b4b] text-[9px] md:text-[10px] font-black uppercase tracking-[0.15em]">{getRoleLabel(userProfile.role)}</span>
                                     {userProfile.church_id && (
-                                        <span className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-100">
-                                            <MapPin className="w-3 h-3 text-slate-300" /> {churchName}
+                                        <span className="flex items-center gap-1 text-[9px] md:text-[10px] font-bold text-slate-400 bg-slate-50 px-2 py-0.5 md:px-2.5 md:py-1 rounded-full border border-slate-100">
+                                            <MapPin className="w-2.5 h-2.5 md:w-3 md:h-3 text-slate-300" /> {churchName}
                                         </span>
                                     )}
                                 </div>
 
                                 {/* Quick Stats (Minimalist) */}
-                                <div className="w-full grid grid-cols-2 gap-4 border-t border-slate-100/80 py-4 mb-2">
+                                <div className="w-full grid grid-cols-2 gap-2 md:gap-4 border-t border-slate-100/80 py-3 md:py-4 mb-2">
                                     <div
                                         onClick={() => setIsAchievementsModalOpen(true)}
                                         className="text-center group/stat cursor-pointer p-1 rounded-xl hover:bg-slate-50 transition-colors"
+
                                     >
                                         <div className="flex items-center justify-center gap-1.5 text-[#d4af37] mb-0.5 group-hover/stat:scale-110 transition-transform">
                                             <Award className="w-5 h-5" />
@@ -627,13 +628,13 @@ export function MemberProfilePage() {
 
                     {/* Danger Zone */}
                     {profile?.church_id && (
-                        <div className="mt-8 border-t border-slate-100 pt-8">
-                            <div className="bg-red-50/30 rounded-3xl p-6 border border-red-100 flex flex-col md:flex-row items-center justify-between gap-6">
+                        <div className="mt-6 md:mt-8 border-t border-slate-100 pt-6 md:pt-8 mb-20 md:mb-0">
+                            <div className="bg-red-50/30 rounded-2xl md:rounded-3xl p-4 md:p-6 border border-red-100 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-6">
                                 <div className="text-left">
-                                    <h4 className="text-red-900 font-display font-bold text-lg italic tracking-tight">Zona de Perigo</h4>
-                                    <p className="text-red-600/70 text-xs font-medium mt-1">Se você criou esta igreja por engano ou deseja recomeçar, use esta opção para desvincular seu perfil ministerial.</p>
+                                    <h4 className="text-red-900 font-display font-bold text-base md:text-lg italic tracking-tight">Zona de Perigo</h4>
+                                    <p className="text-red-600/70 text-[10px] md:text-xs font-medium mt-1">Se você criou esta igreja por engano ou deseja recomeçar, use esta opção para desvincular seu perfil ministerial.</p>
                                 </div>
-                                <button onClick={() => setIsResetModalOpen(true)} className="px-6 py-3 bg-white border border-red-200 text-red-500 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all whitespace-nowrap">Reiniciar Configuração</button>
+                                <button onClick={() => setIsResetModalOpen(true)} className="w-full md:w-auto px-4 py-2.5 md:px-6 md:py-3 bg-white border border-red-200 text-red-500 rounded-xl font-bold text-[9px] md:text-[10px] uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all whitespace-nowrap shadow-sm">Reiniciar Configuração</button>
                             </div>
                         </div>
                     )}
@@ -887,6 +888,6 @@ export function MemberProfilePage() {
                     onStart={startOnboarding}
                 />
             </motion.div >
-        </DashboardLayout >
+        </MemberLayout>
     );
 }

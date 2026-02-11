@@ -1,4 +1,4 @@
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { MemberLayout } from '@/components/layout/MemberLayout';
 import { JornalContent } from '@/components/JornalContent';
 import { useEffect } from 'react';
 import { useTutorial } from '@/contexts/TutorialContext';
@@ -55,8 +55,8 @@ export function MemberHomePage() {
     }, []);
 
     return (
-        <DashboardLayout>
+        <MemberLayout>
             <JornalContent hideCheckin={true} />
-        </DashboardLayout>
+        </MemberLayout>
     );
 }
