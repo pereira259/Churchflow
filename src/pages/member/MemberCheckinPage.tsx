@@ -1,4 +1,4 @@
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { MemberLayout } from '@/components/layout/MemberLayout';
 import { motion } from 'framer-motion';
 import { QrCode, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
@@ -16,7 +16,7 @@ export function MemberCheckinPage() {
     });
 
     return (
-        <DashboardLayout>
+        <MemberLayout>
             <div className="flex flex-col h-[calc(100vh-8rem)] md:h-auto md:min-h-full items-center justify-center p-6 text-center">
                 <motion.div
                     initial={{ scale: 0.9, opacity: 0 }}
@@ -56,6 +56,6 @@ export function MemberCheckinPage() {
                     </div>
                 </motion.div>
             </div>
-        </DashboardLayout>
+        </MemberLayout>
     );
 }

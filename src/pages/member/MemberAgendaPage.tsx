@@ -1,4 +1,5 @@
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { MemberLayout } from '@/components/layout/MemberLayout';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, Check, Bell, CheckCircle2, MessageCircle, Users, ChevronLeft, ChevronRight, CalendarRange, X, Plus, Trash2, Loader2 } from 'lucide-react';
@@ -310,8 +311,10 @@ export function MemberAgendaPage() {
 
 
 
+    const Layout = (profile?.role === 'admin' || profile?.role === 'pastor_chefe' || profile?.role === 'pastor_lider' || profile?.role === 'lider') ? DashboardLayout : MemberLayout;
+
     return (
-        <DashboardLayout>
+        <Layout>
             <PremiumToast
                 isVisible={toast.visible}
                 message={toast.message}
@@ -937,6 +940,6 @@ export function MemberAgendaPage() {
                     </div>
                 )}
             </AnimatePresence>
-        </DashboardLayout>
+        </Layout>
     );
 }
