@@ -240,12 +240,14 @@ export function ProfileGate({ children, requires = ['profile', 'church'] }: Prof
     if (!isBlocked) return <>{children}</>;
 
     return (
-        <div className="relative h-full w-full">
-            <div className="pointer-events-none select-none filter blur-[6px] opacity-40 h-full overflow-hidden">
+        <div className="fixed inset-0 h-[100dvh] w-screen z-[100] bg-[#fdfbf7]">
+            {/* Background Content (Blurred) */}
+            <div className="absolute inset-0 pointer-events-none select-none filter blur-[6px] opacity-40 overflow-hidden">
                 {children}
             </div>
 
-            <div className="absolute inset-0 flex items-center justify-center z-50 p-4">
+            {/* Modal Overlay - Always centered relative to viewport */}
+            <div className="absolute inset-0 flex items-center justify-center z-[110] p-4 bg-black/10 backdrop-blur-[2px]">
                 <motion.div
                     initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }}
                     transition={{ type: 'spring', damping: 25, stiffness: 300, delay: 0.1 }}
