@@ -4,7 +4,7 @@ import { useAuth } from '../lib/auth';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, Shield, Search, User, ArrowLeft, CheckCircle2, XCircle, Church, Calendar, MapPin, Mail, Check, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ConfirmationModal } from '../components/ui/ConfirmationModal';
+import { ConfirmActionModal } from '../components/ui/ConfirmActionModal';
 
 interface UserData {
     id: string;
@@ -738,7 +738,7 @@ export function SuperAdminPage() {
             </div>
 
             {/* Confirmation Modal */}
-            <ConfirmationModal
+            <ConfirmActionModal
                 isOpen={confirmModal.isOpen}
                 onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
                 onConfirm={confirmModal.onConfirm}
