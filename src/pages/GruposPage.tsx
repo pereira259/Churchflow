@@ -1291,7 +1291,7 @@ export function GruposPage() {
                                         placeholder="Buscar grupos..."
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="w-full h-11 pl-11 pr-4 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold text-[#1e1b4b] placeholder:text-slate-400 focus:ring-2 focus:ring-[#d4af37]/10 focus:border-[#d4af37]/20 transition-all outline-none"
+                                        className="w-full h-11 pl-11 pr-4 bg-white border border-slate-200 rounded-2xl text-xs font-bold text-[#1e1b4b] placeholder:text-slate-400/60 focus:ring-4 focus:ring-[#d4af37]/10 focus:border-[#d4af37]/40 transition-all outline-none shadow-sm"
                                     />
                                 </div>
                             </div>
@@ -1416,7 +1416,7 @@ export function GruposPage() {
                                             placeholder="Buscar grupos..."
                                             value={searchTerm}
                                             onChange={(e) => setSearchTerm(e.target.value)}
-                                            className="w-full h-12 pl-12 pr-4 bg-white border border-slate-100 rounded-2xl text-[11px] font-bold text-[#1e1b4b] placeholder:text-slate-400 focus:ring-4 focus:ring-[#d4af37]/10 focus:border-[#d4af37]/20 transition-all outline-none shadow-sm"
+                                            className="w-full h-12 pl-12 pr-4 bg-white border border-slate-200 rounded-2xl text-[11px] font-bold text-[#1e1b4b] placeholder:text-slate-400/60 focus:ring-4 focus:ring-[#d4af37]/10 focus:border-[#d4af37]/40 transition-all outline-none shadow-md"
                                         />
                                     </div>
                                     {canCreate && (

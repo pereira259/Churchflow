@@ -77,7 +77,6 @@ export default function App() {
             <DashboardDataProvider>
                 <Router>
                     <TutorialProvider>
-                        <div className="fixed bottom-1 left-1 z-[9999] bg-green-600 text-white text-[10px] px-1 rounded pointer-events-none opacity-50">V2.1</div>
                         <Routes>
                             {/* Auth - Público */}
                             <Route path="/login" element={<LoginPage />} />

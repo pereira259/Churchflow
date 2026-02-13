@@ -9,9 +9,10 @@
 - [x] **Enhance Super Admin Panel** <!-- id: 4 -->
     - [x] Add "All Churches" tab <!-- id: 5 -->
     - [x] Fetch all churches data <!-- id: 6 -->
-    - [ ] **Debug: Fix empty list rendering** <!-- id: 7 -->
-    - [ ] Implement "Delete Church" functionality <!-- id: 8 -->
-    - [ ] Verify styling and actions <!-- id: 9 -->
+    - [x] Debug: Fix empty list rendering <!-- id: 7 -->
+    - [x] Implement "Delete Church" functionality <!-- id: 8 -->
+    - [ ] **UI: Replace native confirm with Custom Modal** <!-- id: 9 -->
+    - [ ] Verify styling and actions <!-- id: 10 -->
 - [x] Replace native 'confirm' in MinisteriosPage with Custom UI Modal
 - [x] Refine Finance Transaction Modal (FinanceiroPage.tsx)
     - [x] Implement Member Search/Select integration for "Nome do Ofertante"
@@ -21,3 +22,6 @@
     - [x] Fix DashboardLayout usage on mobile pages
     - [x] Refactor Member Profile Card for mobile responsiveness
     - [x] Verify Mobile Navigation and Touch targets
+    - [x] Fix "Estudos" button (Create page and route)
+    - [x] Fix "Grupos" link to trigger ProfileGate
+    - [x] Fix ProfileGate modal positioning on mobile

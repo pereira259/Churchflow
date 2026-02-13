@@ -1,10 +1,7 @@
-import { BookOpen, Sparkles, CalendarCheck, ArrowLeft, Loader2, Share2 } from 'lucide-react';
+import { BookOpen, Sparkles, CalendarCheck, ArrowLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
-import { useState, useMemo, useRef } from 'react';
-import { getDailyWord } from '@/lib/daily-word';
-import { toBlob } from 'html-to-image';
-
+import React from 'react';
 type StudyView = 'home' | 'bible' | 'chat' | 'plans';
 
 interface StudyLayoutProps {
@@ -14,9 +11,6 @@ interface StudyLayoutProps {
 }
 
 export function StudyLayout({ currentView, onViewChange, children }: StudyLayoutProps) {
-    const [isGenerating, setIsGenerating] = useState(false);
-    const shareCardRef = useRef<HTMLDivElement>(null);
-    const dailyWord = useMemo(() => getDailyWord(), []);
 
     const studyCards = [
         {
@@ -48,50 +42,6 @@ export function StudyLayout({ currentView, onViewChange, children }: StudyLayout
         },
     ];
 
-    // Automatic Night Mode logic (18h to 06h) - Copied from JornalContent for consistency
-    const isNight = useMemo(() => {
-        const hour = new Date().getHours();
-        return hour >= 18 || hour < 6;
-    }, []);
-
-    const handleShareImage = async () => {
-        if (!shareCardRef.current) return;
-
-        setIsGenerating(true);
-        try {
-            await new Promise(resolve => setTimeout(resolve, 200));
-
-            const blob = await toBlob(shareCardRef.current, {
-                cacheBust: true,
-                pixelRatio: 2,
-            });
-
-            if (!blob) throw new Error('Blob could not be generated');
-
-            const fileName = `Palavra-do-Dia-${new Date().toISOString().split('T')[0]}.png`;
-            const file = new File([blob], fileName, { type: 'image/png' });
-
-            if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                await navigator.share({
-                    files: [file],
-                    title: 'Palavra do Dia',
-                    text: `Confira a Palavra do Dia: "${dailyWord.text}" — ${dailyWord.reference}`,
-                });
-            } else {
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.download = fileName;
-                link.href = url;
-                link.click();
-                URL.revokeObjectURL(url);
-            }
-        } catch (error) {
-            console.error('Erro ao compartilhar imagem:', error);
-            alert('Erro ao processar imagem para compartilhar.');
-        } finally {
-            setIsGenerating(false);
-        }
-    };
 
     // HOME VIEW
     if (currentView === 'home') {
@@ -109,73 +59,10 @@ export function StudyLayout({ currentView, onViewChange, children }: StudyLayout
                     </p>
                 </header>
 
-                {/* Daily Verse Section - NOW ON TOP */}
-                <motion.section
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="shrink-0 mb-4"
-                >
-                    <div ref={shareCardRef} className={cn(
-                        "relative rounded-2xl p-5 md:p-6 overflow-hidden shadow-lg transition-all duration-1000",
-                        isNight
-                            ? "bg-gradient-to-br from-[#020617] via-[#111827] to-[#1e1b4b] ring-1 ring-white/5"
-                            : "bg-[#1e1b4b]"
-                    )}>
-                        {isNight && (
-                            <>
-                                <div className="absolute top-[-20%] left-[-10%] w-64 h-64 bg-blue-600/10 rounded-full blur-[100px] animate-pulse" />
-                                <div className="absolute bottom-[-20%] right-0 w-48 h-48 bg-[#d4af37]/5 rounded-full blur-[80px]" />
-                            </>
-                        )}
-
-                        <div className="absolute top-0 right-0 p-3 opacity-5 font-display font-black text-5xl text-[#d4af37] select-none pointer-events-none">"</div>
-                        <div className="absolute -bottom-6 -left-6 w-20 h-20 bg-[#d4af37]/10 rounded-full blur-xl" />
-
-                        <div className="relative z-10 flex flex-col items-center text-center gap-3">
-                            <div className="flex items-center gap-3">
-                                <span className="px-3 py-1 rounded-full border border-[#d4af37]/20 bg-[#d4af37]/10 text-[10px] font-black uppercase tracking-[0.2em] text-[#d4af37]">
-                                    Palavra do Dia
-                                </span>
-                                <button
-                                    onClick={handleShareImage}
-                                    disabled={isGenerating}
-                                    className={cn(
-                                        "flex items-center gap-1.5 px-3 py-1 rounded-full transition-all duration-300 border border-transparent",
-                                        isGenerating ? "bg-white/10 text-white/40 cursor-wait" : "bg-white/5 hover:bg-white/10 text-white/60 hover:text-white hover:border-white/10"
-                                    )}
-                                >
-                                    {isGenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <Share2 className="w-3 h-3" />}
-                                    <span className="text-[9px] font-black uppercase tracking-widest">{isGenerating ? 'Gerando...' : 'Compartilhar'}</span>
-                                </button>
-                            </div>
-
-                            <motion.h2
-                                key={dailyWord.text}
-                                initial={{ opacity: 0, y: 5 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="font-display text-xl md:text-2xl font-bold italic text-white leading-snug max-w-2xl mt-1"
-                            >
-                                "{dailyWord.text}"
-                            </motion.h2>
-
-                            <motion.span
-                                key={dailyWord.reference}
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ delay: 0.2 }}
-                                className="font-serif text-[#d4af37]/80 text-xs tracking-widest uppercase font-bold"
-                            >
-                                {dailyWord.reference}
-                            </motion.span>
-                        </div>
-                    </div>
-                </motion.section>
-
-                {/* Cards Grid - BELOW VERSE */}
+                {/* Cards Grid */}
                 <motion.div
                     initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.15 }}
                     className="grid grid-cols-1 md:grid-cols-3 gap-3"
                 >
                     {studyCards.map((card, index) => (
