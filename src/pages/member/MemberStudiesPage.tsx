@@ -7,6 +7,9 @@ import { BibleChapter, BibleVersion, getChapter } from '@/data/bible/bible-types
 import { StudyLayout } from '@/components/bible/layout/StudyLayout';
 import { AIChatPage } from '@/pages/study/AIChatPage';
 
+// Version: 2.0 - Full Bible + AI Chat integration
+
+
 type StudyView = 'home' | 'bible' | 'chat' | 'plans';
 
 export function MemberStudiesPage() {
