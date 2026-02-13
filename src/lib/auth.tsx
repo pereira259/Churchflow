@@ -72,6 +72,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 return null;
             }
 
+            // AUTO-FIX: Corrige role 'member' (inglês) para 'membro' (português)
+            // Bug anterior definia role errado ao excluir igrejas
+            if (data.role === 'member') {
+                console.warn('[AUTH] 🔧 Auto-fixing role typo: member -> membro');
+                data.role = 'membro';
+                await supabase.from('users').update({ role: 'membro' }).eq('id', userId);
+            }
+
             // Cache com chave específica do usuário para evitar cache cross-user
             setCached(`auth_profile_${userId}`, data, 3600000); // 1 hora
             return data as UserProfile;

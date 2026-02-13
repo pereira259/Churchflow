@@ -24,6 +24,8 @@ import {
     getFinancialDailyTrends
 } from '@/lib/supabase-queries';
 import { MinisterialBriefingModal } from '@/components/dashboard/MinisterialBriefingModal';
+import { PastoralAlertsFeed } from '@/components/pastoral/PastoralAlertsFeed';
+import { PastoralAlert, getPastoralAlerts, runPastoralEngine, generatePastoralSummary } from '@/lib/pastoral-engine';
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -164,6 +166,11 @@ export function DashboardPage() {
     // Report Modal
     const [isReportOpen, setIsReportOpen] = useState(false);
 
+    // Pastoral Alerts
+    const [pastoralAlerts, setPastoralAlerts] = useState<PastoralAlert[]>([]);
+    const [pastoralLoading, setPastoralLoading] = useState(false);
+    const [pastoralSummary, setPastoralSummary] = useState({ total: 0, critical: 0, high: 0, summary: '' });
+
     useEffect(() => {
         async function fetchData() {
             if (!supabase || !churchId) return;
@@ -217,6 +224,11 @@ export function DashboardPage() {
         if (!localStorage.getItem('churchflow_welcome_seen')) {
             setShowWelcome(true);
         }
+
+        // Run pastoral engine
+        if (churchId) {
+            loadPastoralAlerts();
+        }
     }, [timeframe, churchId]);
 
     const handleCloseWelcome = () => {
@@ -226,6 +238,20 @@ export function DashboardPage() {
 
     const formatCurrency = (value: number) => {
         return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 }).format(value);
+    };
+
+    const loadPastoralAlerts = async () => {
+        if (!churchId) return;
+        setPastoralLoading(true);
+        try {
+            await runPastoralEngine(churchId);
+            const { data } = await getPastoralAlerts(churchId, true);
+            const alerts = (data || []) as PastoralAlert[];
+            setPastoralAlerts(alerts);
+            setPastoralSummary(generatePastoralSummary(alerts));
+        } finally {
+            setPastoralLoading(false);
+        }
     };
 
     return (
@@ -458,6 +484,33 @@ export function DashboardPage() {
 
                     {/* Right Column Stack */}
                     <div className="col-span-12 lg:col-span-4 flex flex-col gap-1.5 h-full min-h-0 text-left">
+                        {/* Pastoral Alerts Widget */}
+                        <motion.section variants={itemVariants} className="card-3d p-2.5 bg-white/40 backdrop-blur-2xl border border-white/60 shrink-0">
+                            <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                    <h3 className="font-display text-lg font-bold italic text-marinho leading-none">Pastoral</h3>
+                                    {pastoralSummary.total > 0 && (
+                                        <span className={cn(
+                                            "px-2 py-0.5 rounded-full text-[8px] font-black",
+                                            pastoralSummary.critical > 0 ? "bg-red-100 text-red-600" :
+                                                pastoralSummary.high > 0 ? "bg-orange-100 text-orange-600" :
+                                                    "bg-emerald-100 text-emerald-600"
+                                        )}>
+                                            {pastoralSummary.total} alerta{pastoralSummary.total > 1 ? 's' : ''}
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                            {pastoralSummary.summary && (
+                                <p className="text-[8px] text-marinho/40 font-bold mb-2 leading-relaxed">{pastoralSummary.summary}</p>
+                            )}
+                            <PastoralAlertsFeed
+                                alerts={pastoralAlerts}
+                                loading={pastoralLoading}
+                                onRefresh={loadPastoralAlerts}
+                                compact
+                            />
+                        </motion.section>
                         <motion.section variants={itemVariants} className="card-3d p-2.5 flex-1 flex flex-col min-h-0 bg-white/40 backdrop-blur-2xl overflow-hidden border border-white/60">
                             <Link to="/visitantes" className="flex items-center justify-between mb-2 flex-none group/header cursor-pointer">
                                 <div>

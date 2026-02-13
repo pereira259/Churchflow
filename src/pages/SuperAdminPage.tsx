@@ -4,6 +4,7 @@ import { useAuth } from '../lib/auth';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, Shield, Search, User, ArrowLeft, CheckCircle2, XCircle, Church, Calendar, MapPin, Mail, Check, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ConfirmationModal } from '../components/ui/ConfirmationModal';
 
 interface UserData {
     id: string;
@@ -44,6 +45,19 @@ export function SuperAdminPage() {
     const [allChurches, setAllChurches] = useState<any[]>([]);
     const [processingId, setProcessingId] = useState<string | null>(null);
     const [toast, setToast] = useState<Toast | null>(null);
+    const [confirmModal, setConfirmModal] = useState<{
+        isOpen: boolean;
+        title: string;
+        message: string;
+        onConfirm: () => void;
+        variant?: 'danger' | 'warning' | 'info';
+        confirmText?: string;
+    }>({
+        isOpen: false,
+        title: '',
+        message: '',
+        onConfirm: () => { },
+    });
 
     const SUPER_ADMIN_EMAIL = 'dp6274720@gmail.com';
 
@@ -264,53 +278,125 @@ export function SuperAdminPage() {
         }
     };
 
-    const handleToggleStatus = async (churchId: string, currentStatus: string) => {
+    const handleToggleStatus = (churchId: string, currentStatus: string) => {
         const newStatus = currentStatus === 'active' ? 'suspended' : 'active';
-        if (!confirm(`Tem certeza que deseja alterar o status de ${currentStatus} para ${newStatus}?`)) return;
 
-        setProcessingId(churchId);
-        try {
-            const { error } = await supabase
-                .from('churches')
-                .update({ status: newStatus })
-                .eq('id', churchId);
+        setConfirmModal({
+            isOpen: true,
+            title: 'Alterar Status',
+            message: `Tem certeza que deseja alterar o status desta igreja de ${currentStatus === 'active' ? '"Ativa"' : '"Suspensa"'} para ${newStatus === 'active' ? '"Ativa"' : '"Suspensa"'}?`,
+            variant: 'warning',
+            confirmText: 'Confirmar Alteração',
+            onConfirm: async () => {
+                setProcessingId(churchId);
+                setConfirmModal(prev => ({ ...prev, isOpen: false }));
 
-            if (error) throw error;
+                try {
+                    const { error } = await supabase
+                        .from('churches')
+                        .update({ status: newStatus })
+                        .eq('id', churchId);
 
-            await fetchData();
-            showToast('success', `Status alterado para ${newStatus}`);
-        } catch (err: any) {
-            console.error('Erro ao alterar status:', err);
-            showToast('error', 'Erro: ' + err.message);
-        } finally {
-            setProcessingId(null);
-        }
+                    if (error) throw error;
+
+                    await fetchData();
+                    showToast('success', `Status alterado para ${newStatus === 'active' ? 'Ativa' : 'Suspensa'}`);
+                } catch (err: any) {
+                    console.error('Erro ao alterar status:', err);
+                    showToast('error', 'Erro: ' + err.message);
+                } finally {
+                    setProcessingId(null);
+                }
+            }
+        });
     };
 
-    const handleDelete = async (churchId: string) => {
-        if (!confirm('ATENÇÃO: Isso excluirá PERMANENTEMENTE a igreja e todos os seus dados. Tem certeza?')) return;
+    const handleDelete = (churchId: string) => {
+        setConfirmModal({
+            isOpen: true,
+            title: 'Excluir Igreja',
+            message: 'ATENÇÃO: Isso excluirá PERMANENTEMENTE a igreja, todos os membros, financeiro e configurações. Esta ação NÃO pode ser desfeita.',
+            variant: 'danger',
+            confirmText: 'Excluir Permanentemente',
+            onConfirm: async () => {
+                setProcessingId(churchId);
+                setConfirmModal(prev => ({ ...prev, isOpen: false }));
 
-        const confirmName = prompt('Digite "DELETAR" para confirmar:');
-        if (confirmName !== 'DELETAR') return;
+                try {
+                    showToast('success', 'Iniciando processo de exclusão...');
 
-        setProcessingId(churchId);
-        try {
-            // Delete church (cascade should handle related data if configured, otherwise might fail)
-            const { error } = await supabase
-                .from('churches')
-                .delete()
-                .eq('id', churchId);
+                    // Tenta usar a função RPC segura (Backend)
+                    console.log('🗑️ Tentando exclusão via RPC (delete_church_fully)...');
+                    const { error: rpcError } = await supabase.rpc('delete_church_fully', {
+                        target_church_id: churchId
+                    });
 
-            if (error) throw error;
+                    if (!rpcError) {
+                        console.log('✅ Sucesso via RPC!');
+                        await fetchData();
+                        showToast('success', 'Igreja e todos os dados excluídos com sucesso (Via RPC).');
+                        setProcessingId(null);
+                        return;
+                    }
 
-            await fetchData();
-            showToast('success', 'Igreja excluída permanentemente.');
-        } catch (err: any) {
-            console.error('Erro ao excluir:', err);
-            showToast('error', 'Erro ao excluir: ' + err.message);
-        } finally {
-            setProcessingId(null);
-        }
+                    console.warn('⚠️ RPC falhou ou não existe, tentando método manual...', rpcError);
+
+                    // FALLBACK: Método Manual (Client-side)
+                    // Útil se a migration não tiver sido rodada ainda
+
+                    // 1. Unlink Users (Set church_id to NULL for safety, or we could delete if strictly bound)
+                    // We'll unlink to prevent foreign key errors on users table
+                    console.log('🗑️ [Manual] 1. Desvinculando usuários...');
+                    await supabase.from('users').update({ church_id: null, role: 'membro' }).eq('church_id', churchId);
+
+                    // 2. Delete Dependent Data (Leaves first)
+                    // We try to delete all related data. Using Promise.all for independent tables would be faster,
+                    // but sequential is authorized to avoid race conditions if there are inter-dependencies.
+
+                    console.log('🗑️ [Manual] 2. Excluindo dados dependentes...');
+
+                    // Level 3: Associations
+                    await supabase.from('event_registrations').delete().in('event_id', (
+                        await supabase.from('events').select('id').eq('church_id', churchId)
+                    ).data?.map(e => e.id) || []);
+
+                    await supabase.from('schedules').delete().eq('church_id', churchId); // Some schemas have church_id directly
+
+                    // Level 2: Tables with member/event FKs
+                    await supabase.from('transactions').delete().eq('church_id', churchId);
+
+                    // Level 1: Main Entities
+                    await supabase.from('events').delete().eq('church_id', churchId);
+                    await supabase.from('groups').delete().eq('church_id', churchId);
+                    await supabase.from('ministries').delete().eq('church_id', churchId);
+                    await supabase.from('cost_centers').delete().eq('church_id', churchId);
+                    await supabase.from('news').delete().eq('church_id', churchId);
+
+                    // Members need to be deleted specially if there are other constraints, but normally fine now
+                    await supabase.from('members').delete().eq('church_id', churchId);
+
+                    // 3. Finally Delete Church
+                    console.log('🗑️ [Manual] 3. Excluindo igreja...');
+                    const { error } = await supabase
+                        .from('churches')
+                        .delete()
+                        .eq('id', churchId);
+
+                    if (error) {
+                        console.error('❌ Falha final ao excluir igreja:', error);
+                        throw error;
+                    }
+
+                    await fetchData();
+                    showToast('success', 'Igreja e todos os dados excluídos com sucesso.');
+                } catch (err: any) {
+                    console.error('Erro ao excluir:', err);
+                    showToast('error', 'Erro ao excluir (verifique o console para detalhes): ' + (err.message || err.details || 'Erro desconhecido'));
+                } finally {
+                    setProcessingId(null);
+                }
+            }
+        });
     };
 
     const filteredUsers = users.filter(u =>
@@ -566,12 +652,101 @@ export function SuperAdminPage() {
                             </table>
                         </div>
                     )}
+
+                    {/* Content: All Churches Tab */}
+                    {activeTab === 'all_churches' && (
+                        <div className="p-6">
+                            {filteredAllChurches.length === 0 ? (
+                                <div className="text-center py-16">
+                                    <Church className="w-16 h-16 mx-auto mb-4 text-slate-600" />
+                                    <p className="text-slate-400">Nenhuma igreja encontrada</p>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {filteredAllChurches.map((church) => (
+                                        <div key={church.id || Math.random()} className="bg-white/5 border border-white/10 rounded-2xl p-5 hover:bg-white/10 transition-all group">
+                                            <div className="flex items-start justify-between mb-4">
+                                                <div className="flex-1">
+                                                    <div className="flex items-center gap-2 mb-1">
+                                                        <h3 className="text-lg font-bold text-white">{church.name || 'Sem nome'}</h3>
+                                                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${church.status === 'active' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+                                                            church.status === 'pending_approval' ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' :
+                                                                'bg-red-500/20 text-red-400 border border-red-500/30'
+                                                            }`}>
+                                                            {church.status === 'active' ? 'Ativa' :
+                                                                church.status === 'pending_approval' ? 'Pendente' :
+                                                                    church.status === 'suspended' ? 'Suspensa' : (church.status || 'Desconhecido')}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 text-sm text-slate-400 mb-2">
+                                                        <MapPin className="w-3 h-3" />
+                                                        {(church.city || 'N/A')}, {(church.state || 'N/A')}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="space-y-2 mb-4 pb-4 border-b border-white/5">
+                                                <div className="flex items-center gap-2 text-xs text-slate-400">
+                                                    <Mail className="w-3 h-3" />
+                                                    {church.email || 'Sem email'}
+                                                </div>
+                                                <div className="flex items-center gap-2 text-xs text-slate-400">
+                                                    <Calendar className="w-3 h-3" />
+                                                    Criada em {new Date(church.created_at || church.requested_at || Date.now()).toLocaleDateString('pt-BR')}
+                                                </div>
+                                            </div>
+
+                                            <div className="flex gap-2">
+                                                {church.status !== 'pending_approval' && (
+                                                    <button
+                                                        onClick={() => handleToggleStatus(church.id, church.status)}
+                                                        disabled={processingId === church.id}
+                                                        className={`flex-1 h-9 rounded-lg text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-50 flex items-center justify-center gap-2 border ${church.status === 'active'
+                                                            ? 'bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20'
+                                                            : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'
+                                                            }`}
+                                                    >
+                                                        {processingId === church.id ? (
+                                                            <Loader2 className="w-3 h-3 animate-spin" />
+                                                        ) : church.status === 'active' ? (
+                                                            <>Suspender</>
+                                                        ) : (
+                                                            <>Ativar</>
+                                                        )}
+                                                    </button>
+                                                )}
+                                                <button
+                                                    onClick={() => handleDelete(church.id)}
+                                                    disabled={processingId === church.id}
+                                                    className="px-4 h-9 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg text-xs font-bold uppercase tracking-wider border border-red-500/20 transition-all disabled:opacity-50"
+                                                    title="Excluir Permanentemente"
+                                                >
+                                                    Excluir
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 <p className="mt-8 text-center text-slate-600 text-xs">
                     Painel Administrativo ChurchFlow • Acesso Restrito • {user?.email}
                 </p>
             </div>
+
+            {/* Confirmation Modal */}
+            <ConfirmationModal
+                isOpen={confirmModal.isOpen}
+                onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+                onConfirm={confirmModal.onConfirm}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                variant={confirmModal.variant}
+                confirmText={confirmModal.confirmText}
+            />
 
             {/* Toast Notification */}
             <AnimatePresence>

@@ -13,6 +13,9 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { PastoralTimeline } from '@/components/pastoral/PastoralTimeline';
+import { AddNoteModal } from '@/components/pastoral/AddNoteModal';
+import { PastoralNote, getPastoralNotes } from '@/lib/pastoral-engine';
 
 interface MemberProfileProps {
     member: Member;
@@ -21,10 +24,15 @@ interface MemberProfileProps {
 }
 
 export function MemberProfile({ member, onClose, onEdit }: MemberProfileProps) {
-    const { isAdmin, isPastor } = useAuth();
-    const [activeTab, setActiveTab] = useState<'sobre' | 'historico' | 'grupos'>('sobre');
+    const { isAdmin, isPastor, profile: currentUser } = useAuth();
+    const [activeTab, setActiveTab] = useState<'sobre' | 'historico' | 'grupos' | 'pastoral'>('sobre');
     const [timeline, setTimeline] = useState<any[]>([]);
     const [loadingTimeline, setLoadingTimeline] = useState(false);
+
+    // Pastoral State
+    const [pastoralNotes, setPastoralNotes] = useState<PastoralNote[]>([]);
+    const [loadingPastoral, setLoadingPastoral] = useState(false);
+    const [showAddNote, setShowAddNote] = useState(false);
 
     // Role Management State
     const [showRoleMenu, setShowRoleMenu] = useState(false);
@@ -36,6 +44,9 @@ export function MemberProfile({ member, onClose, onEdit }: MemberProfileProps) {
         if (activeTab === 'historico') {
             loadTimeline();
         }
+        if (activeTab === 'pastoral') {
+            loadPastoralNotes();
+        }
     }, [activeTab]);
 
     const loadTimeline = async () => {
@@ -45,6 +56,16 @@ export function MemberProfile({ member, onClose, onEdit }: MemberProfileProps) {
             setTimeline(data || []);
         } finally {
             setLoadingTimeline(false);
+        }
+    };
+
+    const loadPastoralNotes = async () => {
+        setLoadingPastoral(true);
+        try {
+            const { data } = await getPastoralNotes(member.id);
+            setPastoralNotes((data || []) as PastoralNote[]);
+        } finally {
+            setLoadingPastoral(false);
         }
     };
 
@@ -97,7 +118,7 @@ export function MemberProfile({ member, onClose, onEdit }: MemberProfileProps) {
         window.open(`https://wa.me/${finalPhone}`, '_blank');
     };
 
-    return (
+    const profileContent = (
         <div className="relative flex flex-col h-full bg-white overflow-hidden">
             {/* Success Toast */}
             <AnimatePresence>
@@ -177,7 +198,7 @@ export function MemberProfile({ member, onClose, onEdit }: MemberProfileProps) {
             {/* Tight Tab Nav */}
             <div className="px-6 bg-white border-b border-slate-100 shrink-0">
                 <div className="flex gap-6">
-                    {['sobre', 'historico', 'grupos'].map((tab) => (
+                    {(['sobre', 'historico', 'grupos', ...(isAdmin || isPastor ? ['pastoral'] : [])] as const).map((tab) => (
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab as any)}
@@ -348,6 +369,20 @@ export function MemberProfile({ member, onClose, onEdit }: MemberProfileProps) {
                             </div>
                         </div>
                     )}
+
+                    {activeTab === 'pastoral' && (isAdmin || isPastor) && (
+                        <motion.div
+                            key="pastoral"
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                        >
+                            <PastoralTimeline
+                                notes={pastoralNotes}
+                                loading={loadingPastoral}
+                                onAddNote={() => setShowAddNote(true)}
+                                onRefresh={loadPastoralNotes}
+                            />
+                        </motion.div>
+                    )}
                 </AnimatePresence>
             </div>
 
@@ -436,5 +471,20 @@ export function MemberProfile({ member, onClose, onEdit }: MemberProfileProps) {
                 </div>
             </div>
         </div>
+    );
+
+    return (
+        <>
+            {profileContent}
+            <AddNoteModal
+                isOpen={showAddNote}
+                onClose={() => setShowAddNote(false)}
+                memberId={member.id}
+                memberName={member.full_name}
+                authorId={currentUser?.id || ''}
+                churchId={currentUser?.church_id || ''}
+                onSuccess={loadPastoralNotes}
+            />
+        </>
     );
 }

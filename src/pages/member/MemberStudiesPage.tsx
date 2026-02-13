@@ -1,86 +1,126 @@
 import { MemberLayout } from "@/components/layout/MemberLayout";
-import { BookOpen, Video, FileText, Headphones } from "lucide-react";
+import { useState, useEffect } from 'react';
+import { BibleNavigation } from '@/components/bible/BibleNavigation';
+import { BibleReader } from '@/components/bible/BibleReader';
+import { BibleToolbar } from '@/components/bible/BibleToolbar';
+import { BibleChapter, BibleVersion, getChapter } from '@/data/bible/bible-types';
+import { StudyLayout } from '@/components/bible/layout/StudyLayout';
+import { AIChatPage } from '@/pages/study/AIChatPage';
+
+type StudyView = 'home' | 'bible' | 'chat' | 'plans';
 
 export function MemberStudiesPage() {
+    // View State
+    const [currentView, setCurrentView] = useState<StudyView>('home');
+
+    // Bible State
+    const [isSidebarOpen, setSidebarOpen] = useState(false);
+    const [currentBookId, setCurrentBookId] = useState('gn');
+    const [currentChapter, setCurrentChapter] = useState(1);
+    const [currentVersion, setCurrentVersion] = useState<BibleVersion>('NVI');
+    const [chapterContent, setChapterContent] = useState<BibleChapter | undefined>(undefined);
+    const [isLoading, setLoading] = useState(false);
+
+    // User preferences
+    const [fontSize, setFontSize] = useState(18);
+    const [isPulpitMode, setPulpitMode] = useState(false);
+
+    useEffect(() => {
+        loadChapter(currentBookId, currentChapter, currentVersion);
+    }, [currentBookId, currentChapter, currentVersion]);
+
+    const loadChapter = async (bookId: string, chapter: number, version: BibleVersion) => {
+        setLoading(true);
+        setTimeout(() => {
+            const data = getChapter(bookId, chapter, version);
+            if (data) {
+                setChapterContent(data);
+            } else {
+                setChapterContent({
+                    bookId,
+                    chapter,
+                    verses: [
+                        { number: 1, text: "Capítulo não encontrado. Verifique se os dados da Bíblia estão carregados corretamente." }
+                    ]
+                });
+            }
+            setLoading(false);
+        }, 150);
+    };
+
+    const handleSelectBook = (bookId: string) => {
+        setCurrentBookId(bookId);
+        setCurrentChapter(1);
+    };
+
+    const renderBibleContent = () => (
+        <div className="flex flex-col h-full w-full relative">
+            {/* Bible Sidebar - Sheet style on mobile */}
+            {!isPulpitMode && isSidebarOpen && (
+                <div className="absolute inset-0 z-30 bg-white md:relative md:w-72 md:shrink-0">
+                    <BibleNavigation
+                        currentBookId={currentBookId}
+                        currentChapter={currentChapter}
+                        onSelectBook={(bookId) => {
+                            handleSelectBook(bookId);
+                            setSidebarOpen(false);
+                        }}
+                        onSelectChapter={(ch) => {
+                            setCurrentChapter(ch);
+                            setSidebarOpen(false);
+                        }}
+                        isOpen={isSidebarOpen}
+                    />
+                </div>
+            )}
+
+            {/* Bible Main Area */}
+            <div className="flex-1 flex flex-col h-full min-w-0 relative z-10">
+                <BibleToolbar
+                    onToggleSidebar={() => setSidebarOpen(!isSidebarOpen)}
+                    isSidebarOpen={isSidebarOpen}
+                    fontSize={fontSize}
+                    setFontSize={setFontSize}
+                    isPulpitMode={isPulpitMode}
+                    setPulpitMode={setPulpitMode}
+                    currentVersion={currentVersion}
+                    onVersionChange={setCurrentVersion}
+                />
+
+                <div className="flex-1 overflow-y-auto custom-scrollbar relative bg-[#fdfbf7]">
+                    <BibleReader
+                        chapterContent={chapterContent}
+                        fontSize={fontSize}
+                        isPulpitMode={isPulpitMode}
+                        isLoading={isLoading}
+                    />
+
+                    {!isPulpitMode && (
+                        <div className="text-center py-8 text-[#1e1b4b]/30 text-[10px] font-bold uppercase tracking-widest pb-24">
+                            <p>Versão: Almeida Corrigida Fiel (ACF)</p>
+                            <p className="mt-1">© 2026 ChurchFlow - Módulo Bíblia</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+
     return (
         <MemberLayout>
-            <div className="p-4 space-y-6 pb-24">
-                {/* Header */}
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-2xl font-display font-bold text-[#1e1b4b]">
-                            Estudos
-                        </h1>
-                        <p className="text-slate-500 text-sm">
-                            Cresça em conhecimento e graça
-                        </p>
-                    </div>
-                    <div className="w-10 h-10 rounded-full bg-[#d4af37]/10 flex items-center justify-center">
-                        <BookOpen className="w-5 h-5 text-[#d4af37]" />
-                    </div>
-                </div>
-
-                {/* Featured Study */}
-                <div className="bg-[#1e1b4b] rounded-2xl p-6 text-white relative overflow-hidden shadow-xl shadow-[#1e1b4b]/20">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-[#d4af37]/10 rounded-full blur-2xl -mr-10 -mt-10" />
-
-                    <span className="inline-block px-3 py-1 bg-white/10 rounded-full text-[10px] font-black uppercase tracking-widest mb-3 border border-white/10">
-                        Série do MêS
-                    </span>
-                    <h2 className="text-xl font-bold mb-2">Identidade em Cristo</h2>
-                    <p className="text-white/60 text-sm mb-4 line-clamp-2">
-                        Descubra quem você realmente é através das escrituras e fortaleça sua fundação espiritual.
-                    </p>
-                    <button className="w-full py-3 bg-white text-[#1e1b4b] rounded-xl font-bold text-xs uppercase tracking-widest hover:bg-slate-100 transition-colors">
-                        Começar Agora
-                    </button>
-                </div>
-
-                {/* Categories */}
-                <div className="grid grid-cols-2 gap-3">
-                    <div className="p-4 bg-white border border-slate-100 rounded-2xl flex flex-col items-center text-center gap-2 active:scale-95 transition-transform">
-                        <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                            <Video className="w-5 h-5" />
-                        </div>
-                        <span className="font-bold text-slate-700 text-xs">Vídeos</span>
-                    </div>
-                    <div className="p-4 bg-white border border-slate-100 rounded-2xl flex flex-col items-center text-center gap-2 active:scale-95 transition-transform">
-                        <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
-                            <Headphones className="w-5 h-5" />
-                        </div>
-                        <span className="font-bold text-slate-700 text-xs">Áudios</span>
-                    </div>
-                    <div className="p-4 bg-white border border-slate-100 rounded-2xl flex flex-col items-center text-center gap-2 active:scale-95 transition-transform">
-                        <div className="w-10 h-10 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center">
-                            <FileText className="w-5 h-5" />
-                        </div>
-                        <span className="font-bold text-slate-700 text-xs">Artigos</span>
-                    </div>
-                    <div className="p-4 bg-white border border-slate-100 rounded-2xl flex flex-col items-center text-center gap-2 active:scale-95 transition-transform">
-                        <div className="w-10 h-10 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center">
-                            <BookOpen className="w-5 h-5" />
-                        </div>
-                        <span className="font-bold text-slate-700 text-xs">Planos</span>
-                    </div>
-                </div>
-
-                {/* Recent Items */}
-                <div>
-                    <h3 className="font-display font-bold text-[#1e1b4b] mb-3">Recentes</h3>
-                    <div className="space-y-3">
-                        {[1, 2, 3].map((i) => (
-                            <div key={i} className="flex items-center gap-3 p-3 bg-white border border-slate-100 rounded-xl">
-                                <div className="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
-                                    <BookOpen className="w-5 h-5 text-slate-400" />
-                                </div>
-                                <div>
-                                    <h4 className="font-bold text-slate-700 text-sm">Fundamentos da Fé</h4>
-                                    <p className="text-xs text-slate-400">Aula {i} • 15 min</p>
-                                </div>
+            <div className="h-full flex flex-col overflow-hidden">
+                <StudyLayout currentView={currentView} onViewChange={(view: StudyView) => setCurrentView(view)}>
+                    {currentView === 'bible' && renderBibleContent()}
+                    {currentView === 'chat' && <AIChatPage />}
+                    {currentView === 'plans' && (
+                        <div className="flex flex-col items-center justify-center h-full text-[#1e1b4b]/40 font-bold gap-4">
+                            <div className="h-16 w-16 bg-[#1e1b4b]/5 rounded-2xl flex items-center justify-center">
+                                <span className="text-3xl">📅</span>
                             </div>
-                        ))}
-                    </div>
-                </div>
+                            <p>Módulo de Planos em Desenvolvimento...</p>
+                        </div>
+                    )}
+                </StudyLayout>
             </div>
         </MemberLayout>
     );

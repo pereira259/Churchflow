@@ -164,7 +164,7 @@ export default function App() {
                             } />
 
                             <Route path="/perfil" element={
-                                <ProtectedRoute requiredRoles={['admin', 'pastor_chefe', 'pastor_lider', 'lider', 'financeiro', 'membro', 'visitante']}>
+                                <ProtectedRoute>
                                     <MemberProfilePage />
                                 </ProtectedRoute>
                             } />

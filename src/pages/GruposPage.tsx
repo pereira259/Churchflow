@@ -1203,119 +1203,146 @@ export function GruposPage() {
                 </div>
             </Modal>
 
-            <div
-                className="h-full flex flex-col overflow-hidden bg-[#f8f9fa] relative"
-            >
-                {/* Float Header / Google Style Search Area */}
-                <div className="absolute top-4 left-4 z-20 w-[380px] h-[calc(100%-2rem)] pointer-events-none">
-                    <div className="h-full flex flex-col bg-white/80 backdrop-blur-xl rounded-[32px] shadow-2xl border border-white/40 pointer-events-auto overflow-hidden relative group">
-                        {/* Decorative Background Glow */}
-                        <div className="absolute -top-10 -right-10 w-32 h-32 bg-[#d4af37]/5 rounded-full blur-3xl pointer-events-none group-hover:bg-[#d4af37]/10 transition-colors duration-700" />
+            <div className="h-full flex flex-col overflow-hidden bg-[#f8f9fa] relative">
+                {/* Single full-screen map container */}
+                <div className="flex-1 relative bg-[#e5e3df] overflow-hidden">
+                    <div ref={mapContainerRef} id="map" className="absolute inset-0 z-0 bg-[#e5e3df]" />
 
-                        {/* Top Section: Title, Metrics & Search */}
-                        <div className="p-6 pb-5 flex flex-col gap-4 relative z-10">
-                            {/* Title Row */}
-                            <div className="flex flex-col gap-1">
-                                <span className="text-[9px] font-black uppercase text-[#d4af37] tracking-[0.2em] mb-0.5 ml-0.5 leading-none">Gestão de Relacionamento</span>
-                                <h1 className="text-xl font-bold tracking-tight text-[#1e1b4b] flex items-center gap-2 leading-none">
-                                    <MapPin className="h-5 w-5 text-[#d4af37]" />
-                                    <span>Grupos</span>
-                                    <span className="font-serif italic text-[#d4af37] font-normal text-2xl">&</span>
-                                    <span>Células</span>
-                                </h1>
+                    {/* ===== MOBILE OVERLAY: Bottom Sheet ===== */}
+                    <div className="md:hidden absolute inset-x-0 bottom-0 top-[35vh] z-20 flex flex-col pointer-events-none">
+                        {/* Mobile Map Controls - above the sheet */}
+                        <div className="absolute top-[-33vh] right-3 flex flex-col gap-1.5 z-[500] pointer-events-auto">
+                            <div className="bg-white rounded-lg shadow-lg border border-black/5 p-0.5 flex flex-col overflow-hidden">
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); const map = (window as any).leafletMap; if (map) map.zoomIn(); }}
+                                    className="p-2 hover:bg-slate-50 text-[#1e1b4b] transition-colors border-b border-slate-100 active:bg-blue-50"
+                                >
+                                    <Plus className="h-3.5 w-3.5" />
+                                </button>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); const map = (window as any).leafletMap; if (map) map.zoomOut(); }}
+                                    className="p-2 hover:bg-slate-50 text-[#1e1b4b] transition-colors active:bg-blue-50"
+                                >
+                                    <Minus className="h-3.5 w-3.5" />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Satellite Toggle - Mobile, on the map */}
+                        <div className="absolute top-[-4vh] right-3 z-[500] pointer-events-auto">
+                            <button
+                                onClick={(e) => { e.stopPropagation(); setIsSatellite(!isSatellite); }}
+                                className={cn(
+                                    "flex items-center gap-2 px-2.5 py-1.5 rounded-xl shadow-xl border border-black/5 transition-all active:scale-90",
+                                    isSatellite ? "bg-[#1e1b4b] text-[#d4af37]" : "bg-white text-slate-700"
+                                )}
+                            >
+                                <div
+                                    className="w-8 h-8 rounded-md border border-white/20 shadow-sm bg-cover bg-center"
+                                    style={{
+                                        backgroundImage: isSatellite ? "url('https://a.tile.openstreetmap.org/11/658/1199.png')" : "url('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/11/1199/658')"
+                                    }}
+                                />
+                                <span className="text-[10px] font-black uppercase tracking-wider">{isSatellite ? 'Mapa' : 'Satélite'}</span>
+                            </button>
+                        </div>
+
+                        {/* Sheet Body */}
+                        <div className="flex-1 flex flex-col bg-white rounded-t-[28px] shadow-[0_-8px_30px_-10px_rgba(0,0,0,0.15)] overflow-hidden pointer-events-auto">
+                            {/* Drag Handle */}
+                            <div className="flex justify-center pt-3 pb-2 shrink-0">
+                                <div className="w-10 h-1 rounded-full bg-slate-300" />
                             </div>
 
-                            {/* Metrics Row - 3 Cards */}
-                            <div className="grid grid-cols-3 gap-2">
-                                <div className="flex flex-col items-center py-2 bg-white/70 border border-white/60 rounded-xl shadow-sm">
-                                    <span className="text-[14px] font-black text-marinho leading-none">{metrics.totalGroups}</span>
-                                    <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none mt-1">Grupos</span>
+                            {/* Header + Stats */}
+                            <div className="px-5 pb-3 shrink-0">
+                                <div className="flex items-center justify-between mb-3">
+                                    <div>
+                                        <span className="text-[8px] font-black uppercase text-[#d4af37] tracking-[0.2em] leading-none">Gestão de Relacionamento</span>
+                                        <h1 className="text-lg font-bold tracking-tight text-[#1e1b4b] flex items-center gap-1.5 leading-tight mt-0.5">
+                                            <MapPin className="h-4 w-4 text-[#d4af37] shrink-0" />
+                                            <span>Grupos</span>
+                                            <span className="font-serif italic text-[#d4af37] font-normal text-xl">&</span>
+                                            <span>Células</span>
+                                        </h1>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        <div className="flex flex-col items-center px-2.5 py-1.5 bg-slate-50 rounded-xl">
+                                            <span className="text-sm font-black text-marinho leading-none">{metrics.totalGroups}</span>
+                                            <span className="text-[6px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Grupos</span>
+                                        </div>
+                                        <div className="flex flex-col items-center px-2.5 py-1.5 bg-slate-50 rounded-xl">
+                                            <span className="text-sm font-black text-gold leading-none">{metrics.totalMembers}</span>
+                                            <span className="text-[6px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Vidas</span>
+                                        </div>
+                                        <div className="flex flex-col items-center px-2.5 py-1.5 bg-slate-50 rounded-xl">
+                                            <span className="text-sm font-black text-emerald-600 leading-none">{metrics.locations}</span>
+                                            <span className="text-[6px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Áreas</span>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="flex flex-col items-center py-2 bg-white/70 border border-white/60 rounded-xl shadow-sm">
-                                    <span className="text-[14px] font-black text-gold leading-none">{metrics.totalMembers}</span>
-                                    <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none mt-1">Vidas</span>
-                                </div>
-                                <div className="flex flex-col items-center py-2 bg-white/70 border border-white/60 rounded-xl shadow-sm">
-                                    <span className="text-[14px] font-black text-emerald-600 leading-none">{metrics.locations}</span>
-                                    <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none mt-1">Áreas</span>
-                                </div>
-                            </div>
 
-                            {/* Action Bar: Search & New Button */}
-                            <div className="flex items-center gap-3">
-                                <div className="flex-1 relative group">
-                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-slate-300 group-focus-within:text-[#d4af37] transition-colors" />
+                                {/* Search Bar */}
+                                <div className="relative">
+                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300" />
                                     <input
                                         type="text"
                                         placeholder="Buscar grupos..."
                                         value={searchTerm}
                                         onChange={(e) => setSearchTerm(e.target.value)}
-                                        className="w-full h-12 pl-12 pr-4 bg-white border border-slate-100 rounded-2xl text-[11px] font-bold text-[#1e1b4b] placeholder:text-slate-400 focus:ring-4 focus:ring-[#d4af37]/10 focus:border-[#d4af37]/20 transition-all outline-none shadow-sm"
+                                        className="w-full h-11 pl-11 pr-4 bg-slate-50 border border-slate-100 rounded-2xl text-xs font-bold text-[#1e1b4b] placeholder:text-slate-400 focus:ring-2 focus:ring-[#d4af37]/10 focus:border-[#d4af37]/20 transition-all outline-none"
                                     />
                                 </div>
-                                {canCreate && (
-                                    <button
-                                        onClick={openNewGroupModal}
-                                        className="h-12 px-7 bg-[#1e1b4b] hover:bg-[#d4af37] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-[0_8px_20px_-8px_rgba(30,27,75,0.4)] active:scale-95 group/btn flex items-center gap-2.5"
-                                    >
-                                        <Plus className="h-5 w-5 text-gold group-hover/btn:rotate-90 transition-transform" />
-                                        Novo
-                                    </button>
-                                )}
                             </div>
-                        </div>
-                        {/* Divider */}
-                        <div className="h-px bg-gradient-to-r from-transparent via-marinho/10 to-transparent mx-8 mb-2" />
 
-                        {/* List Section: Results */}
-                        <div className="flex-1 flex flex-col overflow-hidden relative z-10">
-                            <div className="px-8 py-4 shrink-0 flex items-center justify-between">
-                                <span className="text-[10px] font-black text-[#1e1b4b] uppercase tracking-[0.2em]">Resultados Ativos ({filteredGroups.length})</span>
+                            {/* Divider */}
+                            <div className="h-px bg-gradient-to-r from-transparent via-slate-200 to-transparent mx-6 shrink-0" />
+
+                            {/* Results Header */}
+                            <div className="px-5 py-2.5 shrink-0 flex items-center justify-between">
+                                <span className="text-[9px] font-black text-[#1e1b4b] uppercase tracking-[0.2em]">Resultados ({filteredGroups.length})</span>
                                 <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
                             </div>
-                            <div className="flex-1 overflow-y-auto px-6 pb-8 space-y-4 custom-scrollbar">
+
+                            {/* Scrollable Group Cards */}
+                            <div className="flex-1 overflow-y-auto px-4 pb-24 space-y-3">
                                 {filteredGroups.length === 0 ? (
-                                    <div className="py-12 text-center">
-                                        <div className="w-16 h-16 bg-[#d4af37]/10 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-[#d4af37]/20 shadow-sm">
-                                            <UsersRound className="h-8 w-8 text-[#d4af37]" />
+                                    <div className="py-10 text-center">
+                                        <div className="w-14 h-14 bg-[#d4af37]/10 rounded-2xl flex items-center justify-center mx-auto mb-3 border border-[#d4af37]/20">
+                                            <UsersRound className="h-7 w-7 text-[#d4af37]" />
                                         </div>
                                         <p className="text-sm font-bold text-[#1e1b4b] mb-1">Crie seu primeiro grupo</p>
-                                        <p className="text-[11px] text-slate-400 max-w-xs mx-auto">
+                                        <p className="text-[11px] text-slate-400 max-w-[250px] mx-auto">
                                             Grupos são células de conexão onde sua comunidade se encontra semanalmente.
                                         </p>
                                     </div>
                                 ) : filteredGroups.map((group: Group) => (
-                                    <div
+                                    <motion.div
                                         key={group.id}
-                                        className="p-3.5 rounded-2xl bg-white/50 border border-white/60 hover:bg-white hover:border-[#d4af37]/30 hover:shadow-xl hover:shadow-[#1e1b4b]/5 transition-all duration-300 relative overflow-hidden group/card cursor-pointer"
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className="p-3.5 rounded-2xl bg-white border border-slate-100 shadow-sm active:scale-[0.98] transition-all duration-200 cursor-pointer"
                                         onClick={() => openEditModal(group)}
                                     >
-                                        <div className="absolute top-0 right-0 w-16 h-16 bg-[#d4af37]/5 rounded-full -mr-8 -mt-8 opacity-0 group-hover/card:opacity-100 transition-opacity" />
-
-                                        <div className="flex gap-4 relative z-10">
-                                            <div className="shrink-0 h-10 w-10 rounded-xl bg-gradient-to-br from-[#1e1b4b] to-[#2e2a6b] flex items-center justify-center text-[#d4af37] shadow-lg group-hover/card:scale-110 transition-transform">
-                                                <UsersRound className="h-4.5 w-4.5" />
+                                        <div className="flex gap-3.5">
+                                            <div className="shrink-0 h-11 w-11 rounded-xl bg-gradient-to-br from-[#1e1b4b] to-[#2e2a6b] flex items-center justify-center text-[#d4af37] shadow-lg">
+                                                <UsersRound className="h-5 w-5" />
                                             </div>
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center justify-between mb-0.5">
-                                                    <h3 className="text-sm font-bold text-[#1e1b4b] truncate group-hover/card:text-[#d4af37] transition-colors">{group.name}</h3>
+                                                    <h3 className="text-sm font-bold text-[#1e1b4b] truncate pr-2">{group.name}</h3>
                                                     <span className="shrink-0 px-2 py-0.5 bg-[#1e1b4b]/5 rounded-lg text-[7px] font-black uppercase text-[#1e1b4b] tracking-widest">{group.category}</span>
                                                 </div>
-                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1 flex items-center gap-2 leading-none">
-                                                    <span className="h-1 w-1 rounded-full bg-slate-300" />
-                                                    Líder: <span className="text-[#1e1b4b]">{group.leader}</span>
+                                                <p className="text-[10px] text-slate-500 font-semibold mb-1.5">
+                                                    {group.leader} · {group.day && !['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].includes(group.day)
+                                                        ? new Date(group.day + 'T12:00:00').toLocaleDateString('pt-BR', { weekday: 'short' })
+                                                        : group.day} {group.time?.slice(0, 5)}h
                                                 </p>
-                                                <p className="text-[8px] font-black text-marinho uppercase tracking-widest mb-2 flex items-center gap-2 leading-none opacity-60">
-                                                    {group.day && !['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].includes(group.day)
-                                                        ? new Date(group.day + 'T12:00:00').toLocaleDateString('pt-BR')
-                                                        : group.day} • {group.time?.slice(0, 5)}h
-                                                </p>
-                                                <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
-                                                    <div className="flex items-center gap-1.5 text-slate-600 group-hover/card:text-marinho transition-colors">
-                                                        <MapPin className="h-3 w-3 text-slate-400 group-hover/card:text-[#d4af37] transition-colors" />
-                                                        <span className="text-[9px] font-bold uppercase tracking-wider truncate max-w-[110px]">{group.location}</span>
+                                                <div className="flex items-center justify-between pt-2 border-t border-slate-50">
+                                                    <div className="flex items-center gap-1.5 text-slate-500">
+                                                        <MapPin className="h-3 w-3 text-[#d4af37]" />
+                                                        <span className="text-[9px] font-bold truncate max-w-[140px]">{group.location}</span>
                                                     </div>
-
                                                     {group.leader_phone && (
                                                         <button
                                                             onClick={(e) => {
@@ -1323,34 +1350,164 @@ export function GruposPage() {
                                                                 const phone = group.leader_phone?.replace(/\D/g, '') || '';
                                                                 window.open(`https://wa.me/55${phone}`, '_blank');
                                                             }}
-                                                            className="flex items-center gap-1.5 pl-1.5 pr-2.5 py-1 rounded-full bg-emerald-50/50 text-emerald-600 hover:bg-emerald-500 hover:text-white border border-emerald-100/50 hover:border-emerald-500 transition-all group/wa"
+                                                            className="flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-50 text-emerald-600 active:bg-emerald-500 active:text-white border border-emerald-100 transition-all"
                                                         >
-                                                            <div className="w-4 h-4 rounded-full bg-emerald-100 flex items-center justify-center group-hover/wa:bg-white/20 transition-colors">
-                                                                <MessageCircle className="h-2.5 w-2.5" />
-                                                            </div>
-                                                            <span className="text-[8px] font-black uppercase tracking-widest">WhatsApp</span>
+                                                            <MessageCircle className="h-3 w-3" />
+                                                            <span className="text-[7px] font-black uppercase tracking-wider">WhatsApp</span>
                                                         </button>
                                                     )}
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
+                                    </motion.div>
                                 ))}
+                            </div>
+
+                            {/* FAB - New Group (Admin only) */}
+                            {canCreate && (
+                                <button
+                                    onClick={openNewGroupModal}
+                                    className="absolute bottom-20 right-4 h-14 w-14 bg-[#1e1b4b] text-[#d4af37] rounded-2xl shadow-[0_8px_25px_-5px_rgba(30,27,75,0.5)] flex items-center justify-center active:scale-90 transition-all z-30"
+                                >
+                                    <Plus className="h-6 w-6" />
+                                </button>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* ===== DESKTOP OVERLAY: Sidebar + Map Controls ===== */}
+                    {/* Desktop Sidebar */}
+                    <div className="hidden md:block absolute top-4 left-4 z-20 w-[380px] h-[calc(100%-2rem)] pointer-events-none">
+                        <div className="h-full flex flex-col bg-white/80 backdrop-blur-xl rounded-[32px] shadow-2xl border border-white/40 pointer-events-auto overflow-hidden relative group">
+                            <div className="absolute -top-10 -right-10 w-32 h-32 bg-[#d4af37]/5 rounded-full blur-3xl pointer-events-none group-hover:bg-[#d4af37]/10 transition-colors duration-700" />
+
+                            <div className="p-6 pb-5 flex flex-col gap-4 relative z-10">
+                                <div className="flex flex-col gap-1">
+                                    <span className="text-[9px] font-black uppercase text-[#d4af37] tracking-[0.2em] mb-0.5 ml-0.5 leading-none">Gestão de Relacionamento</span>
+                                    <h1 className="text-xl font-bold tracking-tight text-[#1e1b4b] flex items-center gap-2 leading-none">
+                                        <MapPin className="h-5 w-5 text-[#d4af37]" />
+                                        <span>Grupos</span>
+                                        <span className="font-serif italic text-[#d4af37] font-normal text-2xl">&</span>
+                                        <span>Células</span>
+                                    </h1>
+                                </div>
+
+                                <div className="grid grid-cols-3 gap-2">
+                                    <div className="flex flex-col items-center py-2 bg-white/70 border border-white/60 rounded-xl shadow-sm">
+                                        <span className="text-[14px] font-black text-marinho leading-none">{metrics.totalGroups}</span>
+                                        <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none mt-1">Grupos</span>
+                                    </div>
+                                    <div className="flex flex-col items-center py-2 bg-white/70 border border-white/60 rounded-xl shadow-sm">
+                                        <span className="text-[14px] font-black text-gold leading-none">{metrics.totalMembers}</span>
+                                        <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none mt-1">Vidas</span>
+                                    </div>
+                                    <div className="flex flex-col items-center py-2 bg-white/70 border border-white/60 rounded-xl shadow-sm">
+                                        <span className="text-[14px] font-black text-emerald-600 leading-none">{metrics.locations}</span>
+                                        <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none mt-1">Áreas</span>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-3">
+                                    <div className="flex-1 relative group">
+                                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4.5 w-4.5 text-slate-300 group-focus-within:text-[#d4af37] transition-colors" />
+                                        <input
+                                            type="text"
+                                            placeholder="Buscar grupos..."
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                            className="w-full h-12 pl-12 pr-4 bg-white border border-slate-100 rounded-2xl text-[11px] font-bold text-[#1e1b4b] placeholder:text-slate-400 focus:ring-4 focus:ring-[#d4af37]/10 focus:border-[#d4af37]/20 transition-all outline-none shadow-sm"
+                                        />
+                                    </div>
+                                    {canCreate && (
+                                        <button
+                                            onClick={openNewGroupModal}
+                                            className="h-12 px-7 bg-[#1e1b4b] hover:bg-[#d4af37] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all shadow-[0_8px_20px_-8px_rgba(30,27,75,0.4)] active:scale-95 group/btn flex items-center gap-2.5"
+                                        >
+                                            <Plus className="h-5 w-5 text-gold group-hover/btn:rotate-90 transition-transform" />
+                                            Novo
+                                        </button>
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="h-px bg-gradient-to-r from-transparent via-marinho/10 to-transparent mx-8 mb-2" />
+
+                            <div className="flex-1 flex flex-col overflow-hidden relative z-10">
+                                <div className="px-8 py-4 shrink-0 flex items-center justify-between">
+                                    <span className="text-[10px] font-black text-[#1e1b4b] uppercase tracking-[0.2em]">Resultados Ativos ({filteredGroups.length})</span>
+                                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                </div>
+                                <div className="flex-1 overflow-y-auto px-6 pb-8 space-y-4 custom-scrollbar">
+                                    {filteredGroups.length === 0 ? (
+                                        <div className="py-12 text-center">
+                                            <div className="w-16 h-16 bg-[#d4af37]/10 rounded-3xl flex items-center justify-center mx-auto mb-4 border border-[#d4af37]/20 shadow-sm">
+                                                <UsersRound className="h-8 w-8 text-[#d4af37]" />
+                                            </div>
+                                            <p className="text-sm font-bold text-[#1e1b4b] mb-1">Crie seu primeiro grupo</p>
+                                            <p className="text-[11px] text-slate-400 max-w-xs mx-auto">
+                                                Grupos são células de conexão onde sua comunidade se encontra semanalmente.
+                                            </p>
+                                        </div>
+                                    ) : filteredGroups.map((group: Group) => (
+                                        <div
+                                            key={group.id}
+                                            className="p-3.5 rounded-2xl bg-white/50 border border-white/60 hover:bg-white hover:border-[#d4af37]/30 hover:shadow-xl hover:shadow-[#1e1b4b]/5 transition-all duration-300 relative overflow-hidden group/card cursor-pointer"
+                                            onClick={() => openEditModal(group)}
+                                        >
+                                            <div className="absolute top-0 right-0 w-16 h-16 bg-[#d4af37]/5 rounded-full -mr-8 -mt-8 opacity-0 group-hover/card:opacity-100 transition-opacity" />
+                                            <div className="flex gap-4 relative z-10">
+                                                <div className="shrink-0 h-10 w-10 rounded-xl bg-gradient-to-br from-[#1e1b4b] to-[#2e2a6b] flex items-center justify-center text-[#d4af37] shadow-lg group-hover/card:scale-110 transition-transform">
+                                                    <UsersRound className="h-4.5 w-4.5" />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center justify-between mb-0.5">
+                                                        <h3 className="text-sm font-bold text-[#1e1b4b] truncate group-hover/card:text-[#d4af37] transition-colors">{group.name}</h3>
+                                                        <span className="shrink-0 px-2 py-0.5 bg-[#1e1b4b]/5 rounded-lg text-[7px] font-black uppercase text-[#1e1b4b] tracking-widest">{group.category}</span>
+                                                    </div>
+                                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] mb-1 flex items-center gap-2 leading-none">
+                                                        <span className="h-1 w-1 rounded-full bg-slate-300" />
+                                                        Líder: <span className="text-[#1e1b4b]">{group.leader}</span>
+                                                    </p>
+                                                    <p className="text-[8px] font-black text-marinho uppercase tracking-widest mb-2 flex items-center gap-2 leading-none opacity-60">
+                                                        {group.day && !['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].includes(group.day)
+                                                            ? new Date(group.day + 'T12:00:00').toLocaleDateString('pt-BR')
+                                                            : group.day} • {group.time?.slice(0, 5)}h
+                                                    </p>
+                                                    <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
+                                                        <div className="flex items-center gap-1.5 text-slate-600 group-hover/card:text-marinho transition-colors">
+                                                            <MapPin className="h-3 w-3 text-slate-400 group-hover/card:text-[#d4af37] transition-colors" />
+                                                            <span className="text-[9px] font-bold uppercase tracking-wider truncate max-w-[110px]">{group.location}</span>
+                                                        </div>
+                                                        {group.leader_phone && (
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    const phone = group.leader_phone?.replace(/\D/g, '') || '';
+                                                                    window.open(`https://wa.me/55${phone}`, '_blank');
+                                                                }}
+                                                                className="flex items-center gap-1.5 pl-1.5 pr-2.5 py-1 rounded-full bg-emerald-50/50 text-emerald-600 hover:bg-emerald-500 hover:text-white border border-emerald-100/50 hover:border-emerald-500 transition-all group/wa"
+                                                            >
+                                                                <div className="w-4 h-4 rounded-full bg-emerald-100 flex items-center justify-center group-hover/wa:bg-white/20 transition-colors">
+                                                                    <MessageCircle className="h-2.5 w-2.5" />
+                                                                </div>
+                                                                <span className="text-[8px] font-black uppercase tracking-widest">WhatsApp</span>
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                {/* FULL SCREEN LEAFLET MAP AREA */}
-                <div className="flex-1 relative bg-[#e5e3df] overflow-hidden" id="leaflet-map-container">
-                    {/* The Map Div must have an ID for Leaflet */}
-                    <div ref={mapContainerRef} id="map" className="absolute inset-0 z-0 bg-[#e5e3df]" />
-
-                    {/* Map Overlays - Hidden when modal is open */}
+                    {/* Desktop Map Overlays */}
                     {!showModal && !showDeleteModal && (
                         <>
-                            {/* Integrated Legend Overlay - Re-aligned and grouped - Z-index fixed */}
-                            <div className="absolute top-4 left-[404px] z-[500] pointer-events-none">
+                            {/* Legend - Desktop only */}
+                            <div className="hidden md:block absolute top-4 left-[404px] z-[500] pointer-events-none">
                                 <div className="bg-white/80 backdrop-blur-md border border-white shadow-lg rounded-2xl px-5 py-2 flex items-center gap-6 pointer-events-auto">
                                     <div className="flex items-center gap-2">
                                         <div className="w-2.5 h-2.5 rounded-full bg-[#ea4335] shadow-sm shadow-red-500/20" />
@@ -1364,47 +1521,32 @@ export function GruposPage() {
                                 </div>
                             </div>
 
-                            {/* Google Maps UI Controls - Floaters - Connected to Leaflet */}
-                            <div className="absolute top-4 right-4 flex flex-col gap-2 z-[500] pointer-events-auto">
+                            {/* Zoom Controls - Desktop only */}
+                            <div className="hidden md:flex absolute top-4 right-4 flex-col gap-2 z-[500] pointer-events-auto">
                                 <div className="bg-white rounded-lg shadow-lg border border-black/5 p-1 flex flex-col overflow-hidden">
                                     <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            const map = (window as any).leafletMap;
-                                            if (map) map.zoomIn();
-                                        }}
+                                        onClick={(e) => { e.stopPropagation(); const map = (window as any).leafletMap; if (map) map.zoomIn(); }}
                                         className="p-2 hover:bg-slate-50 text-[#1e1b4b] transition-colors border-b border-slate-100 active:bg-blue-50"
                                     >
                                         <Plus className="h-4 w-4" />
                                     </button>
                                     <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            const map = (window as any).leafletMap;
-                                            if (map) map.zoomOut();
-                                        }}
+                                        onClick={(e) => { e.stopPropagation(); const map = (window as any).leafletMap; if (map) map.zoomOut(); }}
                                         className="p-2 hover:bg-slate-50 text-[#1e1b4b] transition-colors active:bg-blue-50"
                                     >
                                         <Minus className="h-4 w-4" />
                                     </button>
                                 </div>
                                 <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        const map = (window as any).leafletMap;
-                                        if (map) {
-                                            map.setView([-23.5505, -46.6333], 11);
-                                            setIsSatellite(false);
-                                        }
-                                    }}
+                                    onClick={(e) => { e.stopPropagation(); const map = (window as any).leafletMap; if (map) { map.setView([-23.5505, -46.6333], 11); setIsSatellite(false); } }}
                                     className="bg-white p-2.5 rounded-lg shadow-lg border border-black/5 text-[#1e1b4b] hover:text-[#1a73e8] transition-all active:scale-95"
                                 >
                                     <Navigation className="h-4 w-4" />
                                 </button>
                             </div>
 
-                            {/* Satellite Toggle Button - Max Z-Index */}
-                            <div className="absolute bottom-8 right-4 z-[500] pointer-events-auto">
+                            {/* Satellite Toggle - Desktop only */}
+                            <div className="hidden md:block absolute bottom-8 right-4 z-[500] pointer-events-auto">
                                 <div className="bg-white p-1 rounded-xl shadow-2xl border border-black/5">
                                     <button
                                         onClick={(e) => { e.stopPropagation(); setIsSatellite(!isSatellite); }}

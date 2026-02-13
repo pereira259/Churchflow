@@ -1,7 +1,7 @@
 import { useAuth } from '@/lib/auth';
 import { useMemo, useState, useCallback, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, UserCheck, Church, ArrowRight, X, Check, Loader2 } from 'lucide-react';
+import { UserCheck, Church, ArrowRight, X, Check, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import { ChurchSelectionModal } from '@/components/ChurchSelectionModal';
