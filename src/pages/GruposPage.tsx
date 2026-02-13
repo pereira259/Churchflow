@@ -1209,9 +1209,9 @@ export function GruposPage() {
                     <div ref={mapContainerRef} id="map" className="absolute inset-0 z-0 bg-[#e5e3df]" />
 
                     {/* ===== MOBILE OVERLAY: Bottom Sheet ===== */}
-                    <div className="md:hidden absolute inset-x-0 bottom-0 top-[35vh] z-20 flex flex-col pointer-events-none">
+                    <div className="md:hidden absolute inset-x-0 bottom-0 top-[33%] z-20 flex flex-col pointer-events-none">
                         {/* Mobile Map Controls - above the sheet */}
-                        <div className="absolute top-[-33vh] right-3 flex flex-col gap-1.5 z-[500] pointer-events-auto">
+                        <div className="absolute top-[-30%] right-3 flex flex-col gap-1.5 z-[500] pointer-events-auto">
                             <div className="bg-white rounded-lg shadow-lg border border-black/5 p-0.5 flex flex-col overflow-hidden">
                                 <button
                                     onClick={(e) => { e.stopPropagation(); const map = (window as any).leafletMap; if (map) map.zoomIn(); }}
@@ -1229,7 +1229,7 @@ export function GruposPage() {
                         </div>
 
                         {/* Satellite Toggle - Mobile, on the map */}
-                        <div className="absolute top-[-4vh] right-3 z-[500] pointer-events-auto">
+                        <div className="absolute top-[-8%] right-3 z-[500] pointer-events-auto">
                             <button
                                 onClick={(e) => { e.stopPropagation(); setIsSatellite(!isSatellite); }}
                                 className={cn(
@@ -1305,7 +1305,7 @@ export function GruposPage() {
                             </div>
 
                             {/* Scrollable Group Cards */}
-                            <div className="flex-1 overflow-y-auto px-4 pb-24 space-y-3">
+                            <div className="flex-1 overflow-y-auto px-4 pb-28 space-y-3">
                                 {filteredGroups.length === 0 ? (
                                     <div className="py-10 text-center">
                                         <div className="w-14 h-14 bg-[#d4af37]/10 rounded-2xl flex items-center justify-center mx-auto mb-3 border border-[#d4af37]/20">
@@ -1367,7 +1367,7 @@ export function GruposPage() {
                             {canCreate && (
                                 <button
                                     onClick={openNewGroupModal}
-                                    className="absolute bottom-20 right-4 h-14 w-14 bg-[#1e1b4b] text-[#d4af37] rounded-2xl shadow-[0_8px_25px_-5px_rgba(30,27,75,0.5)] flex items-center justify-center active:scale-90 transition-all z-30"
+                                    className="absolute bottom-24 right-4 h-14 w-14 bg-[#1e1b4b] text-[#d4af37] rounded-2xl shadow-[0_8px_25px_-5px_rgba(30,27,75,0.5)] flex items-center justify-center active:scale-90 transition-all z-30"
                                 >
                                     <Plus className="h-6 w-6" />
                                 </button>
