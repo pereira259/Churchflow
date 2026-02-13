@@ -5,7 +5,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { UsersRound, Home, Calendar, User, BookOpen } from 'lucide-react';
 
-// Version: 2.0 - Mobile Grupos & Estudos Redesign
+
 
 interface MemberLayoutProps {
     children: ReactNode;

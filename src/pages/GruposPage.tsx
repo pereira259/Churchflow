@@ -19,7 +19,7 @@ import {
     Minus,
     Navigation
 } from 'lucide-react';
-// Version: 2.0 - Uber-style split screen mobile layout
+
 import { AnimatePresence, motion } from 'framer-motion';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { MemberLayout } from '@/components/layout/MemberLayout';
