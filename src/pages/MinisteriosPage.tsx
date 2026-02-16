@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { ScrollReveal } from '@/components/ui/ScrollReveal';
 import {
     Users, Plus, Loader2, Music, Heart,
     BookOpen, Coffee, Shield, Search, Trash2, UsersRound, X, Check
@@ -259,74 +260,75 @@ export function MinisteriosPage() {
                                 </p>
                             </div>
                         )}
-                        {filtered.map(ministry => (
-                            <div
-                                key={ministry.id}
-                                onClick={() => handleEdit(ministry)}
-                                className="group bg-white rounded-[24px] border border-slate-100 p-5 shadow-sm hover:shadow-xl hover:shadow-marinho/5 hover:border-gold/30 transition-all cursor-pointer relative overflow-hidden"
-                            >
-                                {/* Decorative Gradient Orb */}
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-marinho/5 to-transparent rounded-bl-full -mr-8 -mt-8 group-hover:from-gold/10 transition-colors duration-500" />
+                        {filtered.map((ministry, idx) => (
+                            <ScrollReveal key={ministry.id} delay={idx * 0.06} direction="up">
+                                <div
+                                    onClick={() => handleEdit(ministry)}
+                                    className="group bg-white rounded-[24px] border border-slate-100 p-5 shadow-sm hover:shadow-xl hover:shadow-marinho/5 hover:border-gold/30 transition-all cursor-pointer relative overflow-hidden"
+                                >
+                                    {/* Decorative Gradient Orb */}
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-marinho/5 to-transparent rounded-bl-full -mr-8 -mt-8 group-hover:from-gold/10 transition-colors duration-500" />
 
-                                <div className="flex items-start justify-between mb-3 relative z-10">
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-slate-50 to-white flex items-center justify-center text-marinho shadow-sm border border-slate-100 group-hover:scale-105 group-hover:border-gold/20 transition-all duration-300">
-                                            {getIconForMinistry(ministry.name)}
+                                    <div className="flex items-start justify-between mb-3 relative z-10">
+                                        <div className="flex items-center gap-3">
+                                            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-slate-50 to-white flex items-center justify-center text-marinho shadow-sm border border-slate-100 group-hover:scale-105 group-hover:border-gold/20 transition-all duration-300">
+                                                {getIconForMinistry(ministry.name)}
+                                            </div>
+                                            <div>
+                                                <h3 className="text-base font-serif font-bold text-marinho group-hover:text-marinho/80 transition-colors leading-tight">
+                                                    {ministry.name}
+                                                </h3>
+                                                {ministry.description && (
+                                                    <p className="text-[10px] text-slate-400 line-clamp-1 font-medium mt-0.5">
+                                                        {ministry.description}
+                                                    </p>
+                                                )}
+                                            </div>
                                         </div>
-                                        <div>
-                                            <h3 className="text-base font-serif font-bold text-marinho group-hover:text-marinho/80 transition-colors leading-tight">
-                                                {ministry.name}
-                                            </h3>
-                                            {ministry.description && (
-                                                <p className="text-[10px] text-slate-400 line-clamp-1 font-medium mt-0.5">
-                                                    {ministry.description}
-                                                </p>
+                                        <button
+                                            onClick={(e) => handleDelete(ministry.id, e)}
+                                            className="h-6 w-6 flex items-center justify-center rounded-full hover:bg-red-50 text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                                            title="Excluir"
+                                        >
+                                            <Trash2 className="h-3.5 w-3.5" />
+                                        </button>
+                                    </div>
+
+                                    <div className="flex items-center justify-between pt-3 border-t border-slate-50 relative z-10">
+                                        <div className="flex items-center gap-2">
+                                            {(ministry.members_count || 0) === 0 ? (
+                                                <span className="text-[9px] font-bold text-gold bg-gold/10 border border-gold/20 px-2.5 py-1 rounded-lg flex items-center gap-1">
+                                                    <Plus className="h-3 w-3" />
+                                                    Adicionar
+                                                </span>
+                                            ) : (
+                                                <>
+                                                    <div className="flex -space-x-1.5">
+                                                        {[...Array(Math.min(3, ministry.members_count || 0))].map((_, i) => (
+                                                            <div key={i} className="h-5 w-5 rounded-full bg-slate-100 border border-white flex items-center justify-center text-[7px] text-slate-400 font-bold overflow-hidden">
+                                                                <Users className="h-2.5 w-2.5" />
+                                                            </div>
+                                                        ))}
+                                                        {(ministry.members_count || 0) > 3 && (
+                                                            <div className="h-5 w-5 rounded-full bg-marinho text-white border border-white flex items-center justify-center text-[7px] font-bold z-10">
+                                                                +{ministry.members_count! - 3}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">
+                                                        {ministry.members_count === 1 ? '1 Membro' : `${ministry.members_count} Membros`}
+                                                    </span>
+                                                </>
                                             )}
                                         </div>
-                                    </div>
-                                    <button
-                                        onClick={(e) => handleDelete(ministry.id, e)}
-                                        className="h-6 w-6 flex items-center justify-center rounded-full hover:bg-red-50 text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
-                                        title="Excluir"
-                                    >
-                                        <Trash2 className="h-3.5 w-3.5" />
-                                    </button>
-                                </div>
 
-                                <div className="flex items-center justify-between pt-3 border-t border-slate-50 relative z-10">
-                                    <div className="flex items-center gap-2">
-                                        {(ministry.members_count || 0) === 0 ? (
-                                            <span className="text-[9px] font-bold text-gold bg-gold/10 border border-gold/20 px-2.5 py-1 rounded-lg flex items-center gap-1">
-                                                <Plus className="h-3 w-3" />
-                                                Adicionar
-                                            </span>
-                                        ) : (
-                                            <>
-                                                <div className="flex -space-x-1.5">
-                                                    {[...Array(Math.min(3, ministry.members_count || 0))].map((_, i) => (
-                                                        <div key={i} className="h-5 w-5 rounded-full bg-slate-100 border border-white flex items-center justify-center text-[7px] text-slate-400 font-bold overflow-hidden">
-                                                            <Users className="h-2.5 w-2.5" />
-                                                        </div>
-                                                    ))}
-                                                    {(ministry.members_count || 0) > 3 && (
-                                                        <div className="h-5 w-5 rounded-full bg-marinho text-white border border-white flex items-center justify-center text-[7px] font-bold z-10">
-                                                            +{ministry.members_count! - 3}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">
-                                                    {ministry.members_count === 1 ? '1 Membro' : `${ministry.members_count} Membros`}
-                                                </span>
-                                            </>
-                                        )}
-                                    </div>
-
-                                    <div className="text-right">
-                                        <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest mb-0.5">Líder</p>
-                                        <p className="text-[10px] font-bold text-marinho truncate max-w-[80px]">{ministry.leader || '-'}</p>
+                                        <div className="text-right">
+                                            <p className="text-[8px] font-black text-slate-300 uppercase tracking-widest mb-0.5">Líder</p>
+                                            <p className="text-[10px] font-bold text-marinho truncate max-w-[80px]">{ministry.leader || '-'}</p>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            </ScrollReveal>
                         ))}
                     </div>
                 )}

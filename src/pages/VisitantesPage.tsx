@@ -22,6 +22,7 @@ import { useState, useEffect } from 'react';
 import { getMembers, Member } from '@/lib/supabase-queries';
 import { MemberForm } from '@/components/forms/MemberForm';
 import { Modal } from '@/components/ui/Modal';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth';
 
@@ -214,18 +215,18 @@ export function VisitantesPage() {
                 </header>
 
                 {/* Filters & Search */}
-                <section className="grid grid-cols-1 md:grid-cols-12 gap-2 pb-1 px-1">
-                    <div className="md:col-span-8 relative group">
-                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-marinho/20 group-focus-within:text-marinho/40 transition-colors" />
+                <section className="grid grid-cols-1 md:grid-cols-12 gap-2 pb-1">
+                    <div className="md:col-span-4 relative group">
+                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-marinho/20 group-focus-within:text-marinho/40 transition-colors" strokeWidth={2} />
                         <input
                             type="text"
                             placeholder="Buscar por nome, e-mail ou telefone..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="input-premium pl-10 h-10 text-[10px] shadow-sm w-full bg-white/60 focus:bg-white transition-all border-white/40 uppercase tracking-wider placeholder:text-slate-300"
+                            className="input-premium pl-10 h-10 text-[10px] shadow-sm w-full bg-white/60 focus:bg-white transition-all border-white/40"
                         />
                     </div>
-                    <div className="md:col-span-4 flex items-center gap-2">
+                    <div className="md:col-span-8 flex items-center gap-2">
                         <div className="h-10 bg-white/60 backdrop-blur-sm border border-white/40 rounded-xl p-1 flex items-center gap-1 shadow-sm font-black text-[9px] uppercase tracking-widest flex-1">
                             {[
                                 { key: 'Todos', count: visitantes.length },
@@ -259,9 +260,9 @@ export function VisitantesPage() {
 
                 {/* Visitor Table */}
                 <div className="card-3d flex-1 min-h-0 flex flex-col texture-engraving overflow-hidden">
-                    <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-marinho/10">
-                        <table className="w-full text-left border-collapse min-w-[800px]">
-                            <thead className="sticky top-0 bg-white z-10">
+                    <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-marinho/10">
+                        <table className="w-full text-left border-collapse">
+                            <thead className="sticky top-0 bg-white z-50">
                                 <tr className="border-b border-marinho/5">
                                     <th className="px-6 py-4 w-12">
                                         <button onClick={toggleSelectAll} className="text-marinho/30 hover:text-marinho transition-colors">
@@ -290,34 +291,32 @@ export function VisitantesPage() {
                                         </td>
                                     </tr>
                                 ) : filteredList.length === 0 ? (
+
                                     <tr>
-                                        <td colSpan={6} className="px-8 py-16 text-center">
-                                            <div className="flex flex-col items-center justify-center gap-3">
-                                                <div className="w-14 h-14 bg-gold/10 rounded-2xl flex items-center justify-center">
-                                                    <UserPlus className="w-7 h-7 text-gold" />
-                                                </div>
-                                                <div className="space-y-1">
-                                                    <p className="text-sm font-bold text-marinho">Nenhum visitante ainda</p>
-                                                    <p className="text-[11px] text-slate-400 max-w-xs mx-auto">
-                                                        Cadastre os visitantes que chegarem à igreja para acompanhar a jornada de integração.
-                                                    </p>
-                                                </div>
-                                                <button
-                                                    onClick={() => setIsNewVisitorOpen(true)}
-                                                    className="mt-2 px-5 py-2 bg-marinho text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-marinho/90 transition-all flex items-center gap-2"
-                                                >
-                                                    <UserPlus className="w-3.5 h-3.5" />
-                                                    Novo Cadastro
-                                                </button>
-                                            </div>
+                                        <td colSpan={6} className="py-16">
+                                            <EmptyState
+                                                title="Nenhum visitante ainda"
+                                                description="Cadastre os visitantes que chegarem à igreja para acompanhar a jornada de integração e acolhimento."
+                                                type="users"
+                                                icon={UserPlus}
+                                                action={
+                                                    <button
+                                                        onClick={() => setIsNewVisitorOpen(true)}
+                                                        className="px-6 py-3 bg-marinho text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-marinho/90 transition-all flex items-center gap-2 mx-auto shadow-lg shadow-marinho/20 hover:scale-[1.02]"
+                                                    >
+                                                        <UserPlus className="w-4 h-4 text-gold" />
+                                                        Novo Cadastro
+                                                    </button>
+                                                }
+                                            />
                                         </td>
                                     </tr>
                                 ) : filteredList.map((visitante) => (
                                     <tr
                                         key={visitante.id}
                                         className={cn(
-                                            "group transition-colors",
-                                            selectedVisitantes.includes(visitante.id) ? "bg-sage/[0.03]" : "hover:bg-slate-50/50"
+                                            "table-row-premium group",
+                                            selectedVisitantes.includes(visitante.id) && "bg-sage/[0.03]"
                                         )}
                                     >
                                         <td className="px-6 py-3">
@@ -333,7 +332,7 @@ export function VisitantesPage() {
                                         </td>
                                         <td className="px-8 py-4">
                                             <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-marinho to-marinho-light flex items-center justify-center text-white font-display text-sm font-black italic shadow-sm group-hover:scale-110 transition-transform">
+                                                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-marinho to-marinho-light flex items-center justify-center text-white font-display text-sm font-black italic shadow-sm overflow-hidden avatar-premium">
                                                     {visitante.photo_url ? (
                                                         <img src={visitante.photo_url} alt={visitante.full_name} className="h-full w-full object-cover" />
                                                     ) : (

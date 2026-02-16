@@ -23,6 +23,7 @@ import { getMembers, deleteMember, Member } from '@/lib/supabase-queries';
 import { useAuth } from '@/lib/auth';
 import { Modal } from '@/components/ui/Modal';
 import { MemberForm } from '@/components/forms/MemberForm';
+import { EmptyState } from '@/components/ui/EmptyState';
 
 // Church ID padrão
 // Church ID padrão - REMOVED
@@ -331,7 +332,7 @@ export function MembrosPage() {
                     ) : (
                         <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-marinho/10">
                             <table className="w-full text-left border-collapse min-w-[800px]">
-                                <thead>
+                                <thead className="sticky top-0 bg-white z-50">
                                     <tr className="border-b border-marinho/5">
                                         <th className="px-6 py-4 w-12">
                                             <button onClick={toggleSelectAll} className="text-marinho/30 hover:text-marinho transition-colors">
@@ -353,8 +354,21 @@ export function MembrosPage() {
                                     <AnimatePresence mode='popLayout'>
                                         {filteredMembers.length === 0 ? (
                                             <tr>
-                                                <td colSpan={5} className="px-6 py-12 text-center text-marinho/40">
-                                                    Nenhum membro encontrado
+                                                <td colSpan={6} className="py-12">
+                                                    <EmptyState
+                                                        title="Nenhum membro encontrado"
+                                                        description="Tente ajustar os filtros ou busque por outro nome."
+                                                        type="search"
+                                                        icon={Search}
+                                                        action={
+                                                            <button
+                                                                onClick={() => { setSearchTerm(''); setStatusFilter('Todos'); }}
+                                                                className="text-sm font-bold text-marinho underline underline-offset-4 hover:text-gold transition-colors"
+                                                            >
+                                                                Limpar filtros
+                                                            </button>
+                                                        }
+                                                    />
                                                 </td>
                                             </tr>
                                         ) : (
@@ -366,8 +380,8 @@ export function MembrosPage() {
                                                     animate={{ opacity: 1, scale: 1 }}
                                                     exit={{ opacity: 0, scale: 0.98 }}
                                                     className={cn(
-                                                        "group transition-colors",
-                                                        selectedMembers.includes(member.id) ? "bg-sage/[0.03]" : "hover:bg-marinho/[0.01]"
+                                                        "table-row-premium group",
+                                                        selectedMembers.includes(member.id) && "bg-sage/[0.03]"
                                                     )}
                                                 >
                                                     <td className="px-6 py-3">
@@ -383,7 +397,7 @@ export function MembrosPage() {
                                                     </td>
                                                     <td className="px-6 py-3 cursor-pointer" onClick={() => openProfileModal(member)}>
                                                         <div className="flex items-center gap-3 group-hover:opacity-80 transition-opacity">
-                                                            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-cream-100 to-cream-200 border border-white shadow-sm flex items-center justify-center font-display text-sm font-bold text-marinho overflow-hidden">
+                                                            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-cream-100 to-cream-200 border border-white flex items-center justify-center font-display text-sm font-bold text-marinho overflow-hidden avatar-premium">
                                                                 {member.photo_url ? (
                                                                     <img src={member.photo_url} alt={member.full_name} className="h-full w-full object-cover" />
                                                                 ) : (

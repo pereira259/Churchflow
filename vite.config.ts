@@ -11,7 +11,8 @@ export default defineConfig({
     },
   },
   server: {
-    port: 7174,
+    host: true, // Enable local network access
+    port: 5174, // Match user's attempt
     strictPort: true,
   },
 })

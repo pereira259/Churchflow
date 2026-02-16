@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { cn } from '@/lib/utils';
+import { AnimatedCounter } from '@/components/ui/AnimatedCounter';
 import { Modal } from '@/components/ui/Modal';
 import { MemberForm } from '@/components/forms/MemberForm';
 import { supabase } from '@/lib/supabase';
@@ -50,6 +51,35 @@ const itemVariants = {
         }
     }
 } as const;
+
+const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return 'Bom dia';
+    if (hour < 18) return 'Boa tarde';
+    return 'Boa noite';
+};
+
+const Typewriter = ({ text, delay, cursor }: { text: string, delay: number, cursor?: boolean }) => {
+    const [currentText, setCurrentText] = useState('');
+    const [currentIndex, setCurrentIndex] = useState(0);
+
+    useEffect(() => {
+        if (currentIndex < text.length) {
+            const timeout = setTimeout(() => {
+                setCurrentText(prev => prev + text[currentIndex]);
+                setCurrentIndex(prev => prev + 1);
+            }, delay);
+            return () => clearTimeout(timeout);
+        }
+    }, [currentIndex, delay, text]);
+
+    return (
+        <span>
+            {currentText}
+            {cursor && currentIndex < text.length && <span className="animate-pulse">|</span>}
+        </span>
+    );
+};
 
 function GospelWelcomeModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
     const { isAdmin, isPastor } = useAuth();
@@ -269,11 +299,11 @@ export function DashboardPage() {
 
                     <div className="space-y-0.5 relative z-10 text-left">
                         <h1 className="text-xl font-black tracking-tight text-marinho flex items-center gap-2 leading-none">
-                            Visão Geral <span className="font-serif italic text-gold font-normal text-2xl">Ministerial</span>
+                            {getGreeting()}, <span className="font-serif italic text-gold font-normal text-2xl">{profile?.full_name?.split(' ')[0] || 'Pastor'}</span>
                         </h1>
                         <div className="inline-flex items-center px-0 py-0.5 mt-1">
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                ChurchFlow
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest h-4 flex items-center">
+                                <Typewriter text="Sua liderança faz a diferença." delay={100} cursor />
                             </span>
                         </div>
                     </div>
@@ -286,7 +316,7 @@ export function DashboardPage() {
                             { label: 'Arrecadação', val: formatCurrency(monthlyGiving), color: 'text-sage', href: '/financeiro' }
                         ].map((item, i) => (
                             <div key={i} className="text-center cursor-pointer group/kpi" onClick={() => navigate(item.href)}>
-                                <p className={cn("text-xl font-display font-bold italic leading-none group-hover/kpi:scale-110 transition-transform", item.color)}>{item.val}</p>
+                                <p className={cn("text-xl font-display font-bold italic leading-none group-hover/kpi:scale-110 transition-transform", item.color)}>{typeof item.val === 'number' ? <AnimatedCounter value={item.val} duration={1400} /> : <AnimatedCounter value={monthlyGiving} duration={1600} formatFn={(v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 }).format(v)} />}</p>
                                 <p className="text-[7px] font-black text-marinho/30 uppercase tracking-[0.2em] mt-0.5 group-hover/kpi:text-marinho/50">{item.label}</p>
                             </div>
                         ))}
@@ -342,14 +372,14 @@ export function DashboardPage() {
                                         <div className="space-y-1">
                                             <p className="text-[9px] font-bold text-marinho/40 uppercase tracking-tight">Comunidade</p>
                                             <div className="flex items-end gap-1">
-                                                <span className="text-xl font-display font-bold text-marinho italic">{memberCount}</span>
+                                                <AnimatedCounter value={memberCount} duration={1200} className="text-xl font-display font-bold text-marinho italic" />
                                                 <span className="text-[10px] text-marinho/40 pb-0.5 font-medium">membros</span>
                                             </div>
                                         </div>
                                         <div className="space-y-1">
                                             <p className="text-[9px] font-bold text-marinho/40 uppercase tracking-tight">Visitantes</p>
                                             <div className="flex items-end gap-1">
-                                                <span className="text-xl font-display font-bold text-gold italic">{visitorCount}</span>
+                                                <AnimatedCounter value={visitorCount} duration={1200} className="text-xl font-display font-bold text-gold italic" />
                                                 <span className="text-[10px] text-gold/60 pb-0.5 font-medium">novos</span>
                                             </div>
                                         </div>
@@ -378,7 +408,7 @@ export function DashboardPage() {
                                             <Cake className="h-4 w-4 text-gold" strokeWidth={1.5} />
                                         </div>
                                         <div className="text-left">
-                                            <p className="text-[10px] font-display font-bold text-marinho leading-none italic group-hover/card:text-gold-dark transition-colors">{upcomingBirthdaysCount} Aniversários</p>
+                                            <p className="text-[10px] font-display font-bold text-marinho leading-none italic group-hover/card:text-gold-dark transition-colors"><AnimatedCounter value={upcomingBirthdaysCount} duration={800} /> Aniversários</p>
                                             <p className="text-[8px] text-marinho/30 uppercase mt-0.5 font-bold tracking-widest">Membros Ativos</p>
                                         </div>
                                     </Link>
@@ -387,7 +417,7 @@ export function DashboardPage() {
                                             <Zap className="h-4 w-4 text-sage" strokeWidth={1.5} />
                                         </div>
                                         <div className="text-left">
-                                            <p className="text-[10px] font-display font-bold text-marinho leading-none italic group-hover/card-2:text-sage-dark transition-colors">{upcomingBaptismsCount} Batismos</p>
+                                            <p className="text-[10px] font-display font-bold text-marinho leading-none italic group-hover/card-2:text-sage-dark transition-colors"><AnimatedCounter value={upcomingBaptismsCount} duration={800} /> Batismos</p>
                                             <p className="text-[8px] text-marinho/30 uppercase mt-0.5 font-bold tracking-widest">Eventos</p>
                                         </div>
                                     </Link>

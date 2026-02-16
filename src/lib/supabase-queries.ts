@@ -1158,6 +1158,31 @@ export async function getMemberSchedulesByUserId(userId: string, churchId: strin
     return { data: data as any[] || [], error };
 }
 
+// ============================================
+// NOTIFICATIONS
+// ============================================
+
+export interface NotificationInput {
+    church_id: string;
+    user_id: string;
+    type: string;
+    title: string;
+    description?: string;
+    metadata?: Record<string, any>;
+}
+
+export async function createNotification(input: NotificationInput) {
+    if (!supabase) return { data: null, error: null };
+
+    const { data, error } = await supabase
+        .from('notifications')
+        .insert(input)
+        .select()
+        .single();
+
+    return { data, error };
+}
+
 export async function createSchedule(schedule: Omit<Schedule, 'id' | 'created_at'>) {
     if (!supabase) return { data: null, error: null };
 
@@ -1166,6 +1191,35 @@ export async function createSchedule(schedule: Omit<Schedule, 'id' | 'created_at
         .insert(schedule)
         .select()
         .single();
+
+    // Auto-create notification for the assigned member
+    if (data && !error) {
+        try {
+            // Get member's user_id and event title
+            const { data: member } = await supabase
+                .from('members')
+                .select('user_id, full_name')
+                .eq('id', schedule.member_id)
+                .single();
+
+            const { data: event } = await supabase
+                .from('events')
+                .select('title')
+                .eq('id', schedule.event_id)
+                .single();
+
+            if (member?.user_id) {
+                await createNotification({
+                    church_id: schedule.church_id,
+                    user_id: member.user_id,
+                    type: 'escala',
+                    title: 'Nova Escala',
+                    description: `Você foi escalado para "${event?.title || 'Evento'}" como ${schedule.role || 'Voluntário'}.`,
+                    metadata: { schedule_id: data.id, event_title: event?.title },
+                });
+            }
+        } catch { /* notification is best-effort */ }
+    }
 
     return { data: data as Schedule | null, error };
 }

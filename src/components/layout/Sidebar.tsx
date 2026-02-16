@@ -20,7 +20,8 @@ import {
 import { cn } from '@/lib/utils';
 import { useAuth, UserRole } from '@/lib/auth';
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useRef } from 'react';
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { NotificationBadge, NotificationsPopover, MessagesPopover } from './TopNavComponents';
 
 // --- Types & Data ---
@@ -134,12 +135,18 @@ export function Sidebar() {
   };
 
   // DEFINITIVE FIX: Force close flyout on route change
+  const mouseX = useMotionValue(Infinity);
+
   useEffect(() => {
     setHoveredGroup(null);
   }, [location.pathname]);
 
   return (
-    <aside className="h-full w-full flex flex-col items-center py-4 transition-all duration-500 bg-cream-50 border-r border-[#1e1b4b]/5 z-50">
+    <aside
+      className="h-full w-full flex flex-col items-center py-4 transition-all duration-500 bg-cream-50 border-r border-[#1e1b4b]/5 z-50"
+      onMouseMove={(e) => mouseX.set(e.clientY)}
+      onMouseLeave={() => mouseX.set(Infinity)}
+    >
       <div className="flex flex-col items-center h-full w-[calc(100%-0.75rem)] rounded-[2rem] relative group">
 
         {/* Logo Section */}
@@ -175,7 +182,10 @@ export function Sidebar() {
                 onMouseLeave={() => setHoveredGroup(null)}
               >
                 {/* Main Group Link with Cycling Logic */}
-                <button
+                <DockIcon
+                  mouseX={mouseX}
+                  isActive={isGroupActive}
+                  icon={group.icon}
                   onClick={() => {
                     const currentIndex = group.items.findIndex(item =>
                       location.pathname === item.href || (item.href !== '/' && location.pathname.startsWith(item.href))
@@ -183,17 +193,7 @@ export function Sidebar() {
                     const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % group.items.length;
                     navigate(group.items[nextIndex].href);
                   }}
-                  className={cn(
-                    'group relative flex h-12 w-12 items-center justify-center rounded-2xl transition-all duration-300',
-                    isGroupActive
-                      ? "bg-[#1e1b4b] text-white shadow-xl shadow-[#1e1b4b]/20"
-                      : "text-[#1e1b4b]/30 hover:bg-white hover:text-[#1e1b4b] hover:shadow-lg"
-                  )}
-                >
-                  <group.icon className={cn("h-5 w-5 transition-transform duration-300", isGroupActive ? "scale-110 text-[#d4af37]" : "group-hover:scale-110")} strokeWidth={isGroupActive ? 2.5 : 2} />
-
-                  {/* Label Tooltip REMOVED to avoid double-popup */}
-                </button>
+                />
 
                 {/* Flyout Menu (The "Impeccable Design" part) */}
                 <AnimatePresence>
@@ -422,5 +422,33 @@ export function TopNav() {
         </div>
       </div>
     </div>
+  );
+}
+
+function DockIcon({ mouseX, isActive, icon: Icon, onClick }: { mouseX: any, isActive: boolean, icon: any, onClick: () => void }) {
+  const ref = useRef<HTMLButtonElement>(null);
+
+  const distance = useTransform(mouseX, (val: number) => {
+    const bounds = ref.current?.getBoundingClientRect() ?? { y: 0, height: 0 };
+    return val - bounds.y - bounds.height / 2;
+  });
+
+  const widthSync = useTransform(distance, [-100, 0, 100], [48, 60, 48]);
+  const width = useSpring(widthSync, { mass: 0.1, stiffness: 150, damping: 12 });
+
+  return (
+    <motion.button
+      ref={ref}
+      style={{ width, height: width }}
+      onClick={onClick}
+      className={cn(
+        'group relative flex items-center justify-center rounded-2xl transition-colors duration-300 aspect-square',
+        isActive
+          ? "bg-[#1e1b4b] text-white shadow-xl shadow-[#1e1b4b]/20"
+          : "text-[#1e1b4b]/30 hover:bg-white hover:text-[#1e1b4b] hover:shadow-lg"
+      )}
+    >
+      <Icon className={cn("transition-transform duration-300 h-5 w-5", isActive ? "text-[#d4af37] scale-110" : "group-hover:scale-110")} strokeWidth={isActive ? 2.5 : 2} />
+    </motion.button>
   );
 }

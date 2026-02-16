@@ -1,11 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { MessageSquare, Send, User, ChevronLeft, Loader2, Search, X } from 'lucide-react';
+import { MessageSquare, Send, ChevronLeft, Loader2, Search, X, Check } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
-// State management for notifications (Global/Shared in context ideally, but local for now)
-let globalUnreadCount = 3;
+// Notification state sync
+let globalUnreadCount = 0;
 let globalSetUnreadCount: ((count: number) => void) | null = null;
 
 export const NotificationBadge = () => {
@@ -13,6 +13,26 @@ export const NotificationBadge = () => {
 
     useEffect(() => {
         globalSetUnreadCount = setCount;
+
+        // Fetch real unread count on mount
+        const fetchCount = async () => {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) return;
+
+                const { count: unread } = await supabase
+                    .from('notifications')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('user_id', user.id)
+                    .eq('read', false);
+
+                const c = unread || 0;
+                setCount(c);
+                globalUnreadCount = c;
+            } catch { /* table may not exist yet */ }
+        };
+
+        fetchCount();
         return () => { globalSetUnreadCount = null; };
     }, []);
 
@@ -23,22 +43,147 @@ export const NotificationBadge = () => {
     );
 };
 
-export const NotificationsPopover = ({ onClose: _onClose }: { onClose: () => void }) => {
-    const [notifications, setNotifications] = useState([
-        { id: 1, title: 'Atualização do Sistema', desc: 'Funcionalidades novas no perfil.', time: 'Há 1 hora', read: false },
-        { id: 2, title: 'Novo Membro', desc: 'João Silva entrou na igreja.', time: 'Há 3 horas', read: false },
-        { id: 3, title: 'Escala Confirmada', desc: 'Você está escalado para domingo.', time: 'Há 5 horas', read: false },
-    ]);
+interface Notification {
+    id: string;
+    type: string;
+    title: string;
+    description: string | null;
+    read: boolean;
+    created_at: string;
+    metadata?: {
+        schedule_id?: string;
+        event_title?: string;
+        action_taken?: 'confirmado' | 'recusado';
+        [key: string]: any;
+    };
+}
 
-    const markAllRead = (e: React.MouseEvent) => {
+const getIcon = (type: string) => {
+    switch (type) {
+        case 'system': return { icon: '⚙️', bg: 'bg-slate-100', ring: 'ring-slate-200' };
+        case 'member': return { icon: '👤', bg: 'bg-blue-50', ring: 'ring-blue-100' };
+        case 'event': return { icon: '📅', bg: 'bg-emerald-50', ring: 'ring-emerald-100' };
+        case 'finance': return { icon: '💰', bg: 'bg-amber-50', ring: 'ring-amber-100' };
+        case 'pastoral': return { icon: '🙏', bg: 'bg-rose-50', ring: 'ring-rose-100' };
+        case 'group': return { icon: '👥', bg: 'bg-violet-50', ring: 'ring-violet-100' };
+        case 'escala': return { icon: '🎯', bg: 'bg-indigo-50', ring: 'ring-indigo-100' };
+        default: return { icon: '🔔', bg: 'bg-gray-100', ring: 'ring-gray-200' };
+    }
+};
+
+const formatTimeAgo = (dateStr: string) => {
+    const now = new Date();
+    const date = new Date(dateStr);
+    const diffMs = now.getTime() - date.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMin < 1) return 'Agora';
+    if (diffMin < 60) return `Há ${diffMin} min`;
+    if (diffHours < 24) return `Há ${diffHours}h`;
+    if (diffDays === 1) return 'Ontem';
+    if (diffDays < 7) return `Há ${diffDays} dias`;
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+};
+
+const getGroup = (dateStr: string): string => {
+    const now = new Date();
+    const date = new Date(dateStr);
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
+    const weekAgo = new Date(today); weekAgo.setDate(today.getDate() - 7);
+
+    if (date >= today) return 'hoje';
+    if (date >= yesterday) return 'ontem';
+    if (date >= weekAgo) return 'semana';
+    return 'anterior';
+};
+
+export const NotificationsPopover = ({ onClose: _onClose }: { onClose: () => void }) => {
+    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchNotifications = async () => {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) { setLoading(false); return; }
+
+                const { data, error } = await supabase
+                    .from('notifications')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .order('created_at', { ascending: false })
+                    .limit(20);
+
+                if (!error && data) {
+                    setNotifications(data as Notification[]);
+                    const unread = data.filter((n: any) => !n.read).length;
+                    globalUnreadCount = unread;
+                    if (globalSetUnreadCount) globalSetUnreadCount(unread);
+                }
+            } catch { /* table may not exist yet */ }
+            setLoading(false);
+        };
+
+        fetchNotifications();
+    }, []);
+
+    const markAllRead = async (e: React.MouseEvent) => {
         e.stopPropagation();
         setNotifications(prev => prev.map(n => ({ ...n, read: true })));
         globalUnreadCount = 0;
         if (globalSetUnreadCount) globalSetUnreadCount(0);
 
-        // Optional: Keep popover open or close it? User usually expects feedback.
-        // We'll just clear the Badge state.
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                await supabase
+                    .from('notifications')
+                    .update({ read: true })
+                    .eq('user_id', user.id)
+                    .eq('read', false);
+            }
+        } catch { /* silent */ }
     };
+
+    const handleScheduleAction = async (notifId: string, scheduleId: string, action: 'confirmado' | 'recusado') => {
+        // Optimistic update
+        setNotifications(prev => prev.map(n =>
+            n.id === notifId
+                ? { ...n, read: true, metadata: { ...n.metadata, action_taken: action } }
+                : n
+        ));
+
+        try {
+            // Update schedule status
+            await supabase
+                .from('schedules')
+                .update({ status: action })
+                .eq('id', scheduleId);
+
+            // Mark notification as read and store action
+            await supabase
+                .from('notifications')
+                .update({ read: true, metadata: { schedule_id: scheduleId, action_taken: action } })
+                .eq('id', notifId);
+
+            // Sync badge
+            const newUnread = notifications.filter(n => !n.read && n.id !== notifId).length;
+            globalUnreadCount = newUnread;
+            if (globalSetUnreadCount) globalSetUnreadCount(newUnread);
+        } catch { /* silent */ }
+    };
+
+    const groups = [
+        { key: 'hoje', label: 'Hoje' },
+        { key: 'ontem', label: 'Ontem' },
+        { key: 'semana', label: 'Esta Semana' },
+        { key: 'anterior', label: 'Anteriores' },
+    ];
+
+    const unreadCount = notifications.filter(n => !n.read).length;
 
     return (
         <motion.div
@@ -47,35 +192,89 @@ export const NotificationsPopover = ({ onClose: _onClose }: { onClose: () => voi
             exit={{ opacity: 0, y: 10, scale: 0.95 }}
             className="header-popover absolute top-full right-0 mt-3 w-80 bg-white rounded-2xl shadow-2xl border border-[#1e1b4b]/5 overflow-hidden z-[100]"
         >
-            <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-                <h3 className="font-bold text-[#1e1b4b] text-sm">Notificações</h3>
-                <button
-                    className="text-[10px] font-bold text-[#d4af37] uppercase tracking-wider hover:underline transition-all"
-                    onClick={markAllRead}
-                >
-                    Marcar lidas
-                </button>
-            </div>
-            <div className="max-h-[300px] overflow-y-auto">
-                {notifications.length === 0 ? (
-                    <div className="p-8 text-center text-gray-400 text-xs">Nenhuma notificação.</div>
-                ) : (
-                    notifications.map((n) => (
-                        <div key={n.id} className={`p-3 border-b border-gray-50 hover:bg-gray-50/50 transition-colors cursor-pointer flex gap-3 ${n.read ? 'opacity-60' : ''}`}>
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${n.read ? 'bg-gray-100' : 'bg-[#d4af37]/10'}`}>
-                                <User className={`w-3.5 h-3.5 ${n.read ? 'text-gray-400' : 'text-[#d4af37]'}`} />
-                            </div>
-                            <div>
-                                <p className="text-xs font-semibold text-[#1e1b4b] leading-tight">{n.title}</p>
-                                <p className="text-[10px] text-gray-400 mt-0.5 leading-relaxed">{n.desc}</p>
-                                <span className="text-[9px] text-gray-300 font-medium mt-1 block">{n.time}</span>
-                            </div>
-                        </div>
-                    ))
+            {/* Header */}
+            <div className="p-3 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-gray-50/80 to-white">
+                <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-[#1e1b4b] text-xs">Notificações</h3>
+                    {unreadCount > 0 && (
+                        <span className="text-[8px] font-black bg-[#d4af37] text-white px-1.5 py-0.5 rounded-full">
+                            {unreadCount}
+                        </span>
+                    )}
+                </div>
+                {unreadCount > 0 && (
+                    <button
+                        className="text-[9px] font-bold text-[#d4af37] uppercase tracking-wider hover:underline transition-all"
+                        onClick={markAllRead}
+                    >
+                        Marcar lidas
+                    </button>
                 )}
             </div>
-            <div className="p-3 bg-gray-50 border-t border-gray-100 text-center">
-                <button className="text-xs font-bold text-[#1e1b4b] hover:text-[#d4af37] transition-colors">Ver todas</button>
+
+            {/* Grouped Notifications */}
+            <div className="max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-thumb-marinho/10">
+                {loading ? (
+                    <div className="p-8 flex items-center justify-center">
+                        <Loader2 className="w-5 h-5 animate-spin text-marinho/20" />
+                    </div>
+                ) : notifications.length === 0 ? (
+                    <div className="p-8 text-center">
+                        <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest">Tudo limpo por aqui ✨</p>
+                    </div>
+                ) : (
+                    groups.map(group => {
+                        const groupNotifs = notifications.filter(n => getGroup(n.created_at) === group.key);
+                        if (groupNotifs.length === 0) return null;
+                        return (
+                            <div key={group.key}>
+                                <div className="px-3 py-1.5 bg-cream-50/50 border-b border-marinho/5">
+                                    <span className="text-[8px] font-black text-marinho/30 uppercase tracking-[0.2em]">{group.label}</span>
+                                </div>
+                                {groupNotifs.map((n) => {
+                                    const style = getIcon(n.type);
+                                    return (
+                                        <div key={n.id} className={`p-2.5 border-b border-gray-50 hover:bg-cream-50/50 transition-all cursor-pointer flex gap-2.5 group ${n.read ? 'opacity-50' : ''}`}>
+                                            <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${style.bg} ring-1 ${style.ring} text-xs group-hover:scale-105 transition-transform`}>
+                                                {style.icon}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="flex items-center justify-between gap-1">
+                                                    <p className="text-[11px] font-semibold text-[#1e1b4b] leading-tight truncate">{n.title}</p>
+                                                    {!n.read && <div className="w-1.5 h-1.5 rounded-full bg-[#d4af37] shrink-0 animate-pulse" />}
+                                                </div>
+                                                {n.description && <p className="text-[9px] text-gray-400 mt-0.5 leading-relaxed truncate">{n.description}</p>}
+                                                {/* Escala Actions */}
+                                                {n.type === 'escala' && n.metadata?.schedule_id && !n.metadata?.action_taken ? (
+                                                    <div className="flex items-center gap-1.5 mt-1.5">
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); handleScheduleAction(n.id, n.metadata!.schedule_id!, 'confirmado'); }}
+                                                            className="flex items-center gap-1 px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-md text-[8px] font-bold uppercase tracking-wider transition-all active:scale-95"
+                                                        >
+                                                            <Check className="w-2.5 h-2.5" /> Aceitar
+                                                        </button>
+                                                        <button
+                                                            onClick={(e) => { e.stopPropagation(); handleScheduleAction(n.id, n.metadata!.schedule_id!, 'recusado'); }}
+                                                            className="flex items-center gap-1 px-2 py-1 bg-red-50 hover:bg-red-100 text-red-600 rounded-md text-[8px] font-bold uppercase tracking-wider transition-all active:scale-95"
+                                                        >
+                                                            <X className="w-2.5 h-2.5" /> Recusar
+                                                        </button>
+                                                    </div>
+                                                ) : n.type === 'escala' && n.metadata?.action_taken ? (
+                                                    <span className={`text-[8px] font-bold mt-1 block ${n.metadata.action_taken === 'confirmado' ? 'text-emerald-500' : 'text-red-400'}`}>
+                                                        {n.metadata.action_taken === 'confirmado' ? '✅ Aceito' : '❌ Recusado'}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-[8px] text-gray-300 font-medium mt-0.5 block">{formatTimeAgo(n.created_at)}</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        );
+                    })
+                )}
             </div>
         </motion.div>
     );
