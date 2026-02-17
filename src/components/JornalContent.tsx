@@ -298,73 +298,18 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
     const shareCardRef = useRef<HTMLDivElement>(null);
     const [readyToShareFile, setReadyToShareFile] = useState<File | null>(null);
 
-    // 1. Silent Pre-Generation (Run on load/change)
+    // 1. Silent Pre-Generation (DISABLED: Using On-Demand for Reliability)
+    /*
     useEffect(() => {
         const generateSilent = async () => {
-            if (!dailyWord) return;
-
-            // Initial check
-            if (!shareCardRef.current) {
-                // If ref is not ready, wait a bit triggers retry if needed, but for now just return
-                return;
-            }
-
-            try {
-                await document.fonts.ready;
-                // Small delay to ensure DOM is fully painted
-                await new Promise(r => setTimeout(r, 1000));
-
-                // CRITICAL: Re-check existence after delay to prevent crash if unmounted
-                if (!shareCardRef.current) return;
-
-                const canvas = await html2canvas(shareCardRef.current, {
-                    backgroundColor: null,
-                    scale: 1, // Reduced to 1 for safety on mobile (prevents memory crash)
-                    logging: false,
-                    useCORS: true,
-                } as any);
-
-                canvas.toBlob((blob) => {
-                    if (blob) {
-                        const fileName = `Palavra-do-Dia-${new Date().toISOString().split('T')[0]}.png`;
-                        const file = new File([blob], fileName, { type: 'image/png' });
-                        setReadyToShareFile(file);
-                        console.log('Share image pre-generated successfully');
-                    }
-                }, 'image/png');
-            } catch (error) {
-                console.warn('Pre-generation failed (silent):', error);
-            }
+             // ... disabled ...
         };
-
         generateSilent();
     }, [dailyWord]);
+    */
 
-    // 2. Instant Share Handler
+    // 2. Instant Share Handler (On-Demand with Fallbacks)
     const handleShareImage = async () => {
-        // If pre-generated file exists, use it INSTANTLY
-        if (readyToShareFile) {
-            const shareData = {
-                files: [readyToShareFile],
-                title: 'Palavra do Dia',
-                text: dailyWord?.verse ? `"${dailyWord.verse}" - ${dailyWord.reference}` : 'Confira a Palavra do Dia!'
-            };
-
-            if (navigator.share && navigator.canShare(shareData)) {
-                try {
-                    await navigator.share(shareData);
-                } catch (e) {
-                    if ((e as Error).name !== 'AbortError') {
-                        alert('Erro ao abrir compartilhamento. Tente novamente.');
-                    }
-                }
-            } else {
-                alert('Seu dispositivo não suporta compartilhamento direto de imagem.');
-            }
-            return;
-        }
-
-        // Fallback: Generate on demand (if pre-gen failed or wasn't ready)
         if (!shareCardRef.current || isGenerating) return;
         setIsGenerating(true);
 
@@ -372,7 +317,7 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
             await document.fonts.ready;
             const canvas = await html2canvas(shareCardRef.current, {
                 backgroundColor: null,
-                scale: 2,
+                scale: 1.5, // Good balance of quality/performance
                 logging: false,
                 useCORS: true,
             } as any);
@@ -380,33 +325,53 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
             canvas.toBlob(async (blob) => {
                 if (!blob) {
                     setIsGenerating(false);
+                    alert('Erro ao gerar imagem. Tente novamente.');
                     return;
                 }
 
                 const fileName = `Palavra-do-Dia-${new Date().toISOString().split('T')[0]}.png`;
                 const file = new File([blob], fileName, { type: 'image/png' });
-                const shareData = {
-                    files: [file],
-                    title: 'Palavra do Dia',
-                    text: dailyWord?.verse ? `"${dailyWord.verse}" - ${dailyWord.reference}` : 'Confira a Palavra do Dia!'
-                };
 
-                if (navigator.share && navigator.canShare(shareData)) {
-                    try {
+                // Fallback Chain
+                try {
+                    // Attempt 1: Full Share (File + Text)
+                    const shareData = {
+                        files: [file],
+                        title: 'Palavra do Dia',
+                        text: dailyWord?.verse ? `"${dailyWord.verse}" - ${dailyWord.reference}` : 'Confira a Palavra do Dia!'
+                    };
+
+                    if (navigator.share && navigator.canShare({ files: [file] })) {
                         await navigator.share(shareData);
-                    } catch (e) {
-                        if ((e as Error).name !== 'AbortError') {
-                            alert('Erro ao abrir compartilhamento. Tente novamente.');
-                        }
+                    } else {
+                        throw new Error('Web Share API not fully supported');
                     }
-                } else {
-                    alert('Seu dispositivo não suporta compartilhamento direto de imagem.');
+                } catch (firstError) {
+                    console.warn('Share Attempt 1 failed, trying File Only:', firstError);
+                    try {
+                        // Attempt 2: File Only (Some Androids prefer this)
+                        await navigator.share({ files: [file] });
+                    } catch (secondError) {
+                        console.warn('Share Attempt 2 failed, forcing Download:', secondError);
+                        // Attempt 3: Force Download
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = fileName;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        alert('Compartilhamento falhou, mas a imagem foi salva no seu dispositivo!');
+                    }
                 }
+
                 setIsGenerating(false);
             }, 'image/png');
         } catch (error) {
-            console.error('Generation error:', error);
+            console.error('Generation Error:', error);
             setIsGenerating(false);
+            alert('Erro ao processar imagem.');
         }
     };
     // --------------------------------------
