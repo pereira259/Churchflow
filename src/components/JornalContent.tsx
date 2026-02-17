@@ -14,7 +14,7 @@ import { useDashboardData } from '@/lib/dashboard-data';
 import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 import { getDailyWord } from '@/lib/daily-word';
-import { toBlob } from 'html-to-image';
+
 import { HolographicCard } from './ui/HolographicCard';
 import { useTutorial } from '@/contexts/TutorialContext';
 import { useProfileGate } from './ProfileGate';
@@ -320,36 +320,64 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
                     return;
                 }
 
-                const file = new File([blob], 'palavra-do-dia.png', { type: 'image/png' });
+                const fileName = `Palavra-do-Dia-${new Date().toISOString().split('T')[0]}.png`;
+                const file = new File([blob], fileName, { type: 'image/png' });
 
-                try {
-                    if (navigator.share && navigator.canShare({ files: [file] })) {
+                // 1. Try Native Share (Mobile)
+                // Note: check for 'files' support specifically
+                if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                    try {
                         await navigator.share({
                             files: [file],
                             title: 'Palavra do Dia - ChurchFlow',
                             text: `"${dailyWord.text}"\n— ${dailyWord.reference}`
                         });
-                    } else {
-                        // Fallback: Download image
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = 'palavra-do-dia.png';
-                        a.click();
-                        URL.revokeObjectURL(url);
-                        alert('Imagem baixada! Compartilhe manualmente.');
+                        setIsGenerating(false);
+                        return; // Success
+                    } catch (shareError) {
+                        // If user cancelled, just stop
+                        if ((shareError as Error).name === 'AbortError') {
+                            setIsGenerating(false);
+                            return;
+                        }
+                        console.warn('Native share failed, trying clipboard...', shareError);
                     }
-                } catch (e) {
-                    console.error('Error sharing:', e);
-                    // Fallback to text if sharing fails
-                    if ((e as Error).name !== 'AbortError') {
-                        const shareText = `"${dailyWord.text}"\n— ${dailyWord.reference}\n\nChurchFlow`;
-                        await navigator.clipboard.writeText(shareText);
-                        alert('Não foi possível compartilhar a imagem. Texto copiado!');
+                }
+
+                // 2. Try Clipboard (Copy Image) - Good for avoiding permissions on some devices
+                try {
+                    if (navigator.clipboard && navigator.clipboard.write) {
+                        const item = new ClipboardItem({ 'image/png': blob });
+                        await navigator.clipboard.write([item]);
+                        alert('Imagem copiada para a área de transferência! Cole no seu app favorito.');
+                        setIsGenerating(false);
+                        return;
                     }
+                } catch (clipboardError) {
+                    console.warn('Clipboard write failed, falling back to download...', clipboardError);
+                }
+
+                // 3. Fallback: Download
+                try {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = fileName;
+                    document.body.appendChild(a); // Append to body for Firefox support
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    alert('Imagem salva! Compartilhe manualmente.');
+                } catch (downloadError) {
+                    console.error('Download failed:', downloadError);
+                    // Last resort: just copy text
+                    const shareText = `"${dailyWord.text}"\n— ${dailyWord.reference}\n\nChurchFlow`;
+                    await navigator.clipboard.writeText(shareText);
+                    alert('Não foi possível gerar a imagem. Texto do versículo copiado!');
                 } finally {
                     setIsGenerating(false);
                 }
+
             }, 'image/png');
         } catch (error) {
             console.error('Error generating image:', error);
