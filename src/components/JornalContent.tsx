@@ -634,47 +634,7 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
         }
     };
 
-    const handleShareImage = async () => {
-        if (!shareCardRef.current) return;
 
-        setIsGenerating(true);
-        try {
-            // Wait a bit for font/assets to be solid
-            await new Promise(resolve => setTimeout(resolve, 200));
-
-            const blob = await toBlob(shareCardRef.current, {
-                cacheBust: true,
-                pixelRatio: 2,
-            });
-
-            if (!blob) throw new Error('Blob could not be generated');
-
-            const fileName = `Palavra-do-Dia-${new Date().toISOString().split('T')[0]}.png`;
-            const file = new File([blob], fileName, { type: 'image/png' });
-
-            // Check if native sharing is available for files
-            if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                await navigator.share({
-                    files: [file],
-                    title: 'Palavra do Dia',
-                    text: `Confira a Palavra do Dia: "${dailyWord.text}" — ${dailyWord.reference}`,
-                });
-            } else {
-                // Fallback to simple download if sharing is not supported
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.download = fileName;
-                link.href = url;
-                link.click();
-                URL.revokeObjectURL(url);
-            }
-        } catch (error) {
-            console.error('Erro ao compartilhar imagem:', error);
-            alert('Erro ao processar imagem para compartilhar.');
-        } finally {
-            setIsGenerating(false);
-        }
-    };
 
     const handleShareNews = async (e: React.MouseEvent, item: any) => {
         e.preventDefault();
