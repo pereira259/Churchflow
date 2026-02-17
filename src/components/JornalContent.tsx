@@ -681,12 +681,26 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
                                 Palavra do Dia
                             </span>
                             <button
-                                onClick={handleShareImage}
-                                disabled={isGenerating}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-all duration-300 min-h-[32px] min-w-[32px] disabled:opacity-50"
+                                onClick={async () => {
+                                    const shareText = `"${dailyWord.text}"\n— ${dailyWord.reference}\n\nChurchFlow`;
+                                    try {
+                                        if (navigator.share) {
+                                            await navigator.share({ title: 'Palavra do Dia', text: shareText });
+                                        } else {
+                                            await navigator.clipboard.writeText(shareText);
+                                            alert('Versículo copiado!');
+                                        }
+                                    } catch (e) {
+                                        if ((e as Error).name !== 'AbortError') {
+                                            await navigator.clipboard.writeText(shareText);
+                                            alert('Versículo copiado!');
+                                        }
+                                    }
+                                }}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-all duration-300 min-h-[32px] min-w-[32px]"
                             >
-                                {isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Share2 className="w-3.5 h-3.5" />}
-                                <span className="text-[9px] font-black uppercase tracking-widest hidden md:inline">{isGenerating ? 'Gerando...' : 'Compartilhar'}</span>
+                                <Share2 className="w-3.5 h-3.5" />
+                                <span className="text-[9px] font-black uppercase tracking-widest hidden md:inline">Compartilhar</span>
                             </button>
                         </div>
 
@@ -712,15 +726,7 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
                         </motion.span>
                     </div>
 
-                    {/* Hidden Share Card for Image Generation */}
-                    <div className="fixed -left-[9999px] -top-[9999px] pointer-events-none">
-                        <div ref={shareCardRef} className="w-[600px] h-[400px] bg-gradient-to-br from-[#1e1b4b] via-[#111827] to-[#1e1b4b] flex flex-col items-center justify-center p-12 text-center" style={{ fontFamily: 'Playfair Display, serif' }}>
-                            <p className="text-[#d4af37] text-xs font-bold uppercase tracking-[0.3em] mb-6">Palavra do Dia</p>
-                            <p className="text-white text-xl font-bold italic leading-relaxed mb-6">"{dailyWord.text}"</p>
-                            <p className="text-[#d4af37]/80 text-sm tracking-widest uppercase font-bold">{dailyWord.reference}</p>
-                            <p className="text-white/20 text-[10px] mt-8 tracking-widest uppercase">ChurchFlow</p>
-                        </div>
-                    </div>
+
                 </div>
             </motion.section>
 
