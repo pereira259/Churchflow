@@ -720,13 +720,47 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
                         </motion.span>
                     </div>
 
-                    {/* Hidden Share Card for Image Generation */}
+                    {/* Hidden Share Card for Image Generation (Premium Square Design) */}
                     <div className="fixed -left-[9999px] -top-[9999px] pointer-events-none">
-                        <div ref={shareCardRef} className="w-[600px] h-[400px] bg-gradient-to-br from-[#1e1b4b] via-[#111827] to-[#1e1b4b] flex flex-col items-center justify-center p-12 text-center" style={{ fontFamily: 'Playfair Display, serif' }}>
-                            <p className="text-[#d4af37] text-xs font-bold uppercase tracking-[0.3em] mb-6">Palavra do Dia</p>
-                            <p className="text-white text-xl font-bold italic leading-relaxed mb-6">"{dailyWord.text}"</p>
-                            <p className="text-[#d4af37]/80 text-sm tracking-widest uppercase font-bold">{dailyWord.reference}</p>
-                            <p className="text-white/20 text-[10px] mt-8 tracking-widest uppercase">ChurchFlow</p>
+                        <div ref={shareCardRef} className="w-[1080px] h-[1080px] bg-[#1e1b4b] relative flex flex-col items-center justify-center p-24 text-center overflow-hidden">
+
+                            {/* Background Gradient & Effects */}
+                            <div className="absolute inset-0 bg-gradient-to-br from-[#0f172a] via-[#1e1b4b] to-[#111827]" />
+                            <div className="absolute top-[-20%] left-[-20%] w-[800px] h-[800px] bg-blue-600/10 rounded-full blur-[150px]" />
+                            <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-[#d4af37]/5 rounded-full blur-[120px]" />
+
+                            {/* Decorative Corners */}
+                            <div className="absolute top-12 left-12 w-32 h-32 border-t-2 border-l-2 border-[#d4af37]/30 rounded-tl-3xl z-10" />
+                            <div className="absolute top-12 right-12 w-32 h-32 border-t-2 border-r-2 border-[#d4af37]/30 rounded-tr-3xl z-10" />
+                            <div className="absolute bottom-12 left-12 w-32 h-32 border-b-2 border-l-2 border-[#d4af37]/30 rounded-bl-3xl z-10" />
+                            <div className="absolute bottom-12 right-12 w-32 h-32 border-b-2 border-r-2 border-[#d4af37]/30 rounded-br-3xl z-10" />
+
+                            {/* Content Container */}
+                            <div className="relative z-20 flex flex-col items-center max-w-4xl">
+                                {/* Header Pill */}
+                                <div className="px-8 py-3 rounded-full border border-[#d4af37]/30 bg-[#d4af37]/5 mb-16 backdrop-blur-sm">
+                                    <p className="text-[#d4af37] text-lg font-bold uppercase tracking-[0.4em] font-sans">Palavra do Dia</p>
+                                </div>
+
+                                {/* Verse Text - Large & Elegant */}
+                                <div style={{ fontFamily: 'Playfair Display, serif' }} className="mb-12">
+                                    <p className="text-white text-5xl md:text-6xl font-bold italic leading-tight drop-shadow-lg">
+                                        "{dailyWord.text}"
+                                    </p>
+                                </div>
+
+                                {/* Reference */}
+                                <p className="text-[#d4af37] text-2xl tracking-[0.2em] uppercase font-bold mb-24 font-sans">
+                                    {dailyWord.reference}
+                                </p>
+
+                                {/* Branding Footer */}
+                                <div className="flex flex-col items-center gap-3 opacity-60">
+                                    <div className="h-px w-32 bg-gradient-to-r from-transparent via-[#d4af37] to-transparent mb-4" />
+                                    <p className="text-white text-sm tracking-[0.5em] uppercase font-light">ChurchFlow</p>
+                                    <p className="text-[#d4af37]/70 text-[10px] tracking-widest uppercase">Jornal do Reino</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
