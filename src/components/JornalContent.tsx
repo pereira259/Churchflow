@@ -295,16 +295,26 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
     const [viewingGallery, setViewingGallery] = useState<{ urls: string[], index: number } | null>(null);
     const [editingNews, setEditingNews] = useState<any>(null);
 
-    // --- Image Sharing Logic (Restored) ---
+    // --- Image Sharing Logic (Direct & Invisible Fallback) ---
     const shareCardRef = useRef<HTMLDivElement>(null);
-    const [previewImage, setPreviewImage] = useState<string | null>(null);
+    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+    // Auto-dismiss toast
+    useEffect(() => {
+        if (toast) {
+            const timer = setTimeout(() => setToast(null), 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [toast]);
 
     const handleShareImage = async () => {
-        if (!shareCardRef.current) return;
+        if (!shareCardRef.current || isGenerating) return;
         setIsGenerating(true);
 
         try {
             await document.fonts.ready;
+
+            // Generate canvas with better settings
             const canvas = await html2canvas(shareCardRef.current, {
                 backgroundColor: null,
                 scale: 2,
@@ -321,38 +331,64 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
 
                 const fileName = `Palavra-do-Dia-${new Date().toISOString().split('T')[0]}.png`;
                 const file = new File([blob], fileName, { type: 'image/png' });
-                const imageUrl = URL.createObjectURL(blob);
+                const shareData = {
+                    files: [file],
+                    title: 'Palavra do Dia',
+                    text: `"${dailyWord.text}"`
+                };
 
-                // Strategy: 
-                // 1. Try Native Share (Files) - Best for Mobile
-                // 2. Fallback to Preview Modal (allows long-press save/share) - Better UX than blind download
+                // STRATEGY: Aggressive Native Share -> Invisible Fallback
 
-                if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                // 1. Native Share (Try it even if validation is strict)
+                if (navigator.share) {
                     try {
-                        await navigator.share({
-                            files: [file],
-                            title: 'Palavra do Dia',
-                            text: `"${dailyWord.text}"\n— ${dailyWord.reference}`
-                        });
+                        await navigator.share(shareData);
                         setIsGenerating(false);
-                        return;
+                        return; // Success!
                     } catch (e) {
                         if ((e as Error).name === 'AbortError') {
                             setIsGenerating(false);
-                            return;
+                            return; // User cancelled
                         }
+                        console.warn('Share failed, trying fallback...', e);
                     }
                 }
 
-                // Fallback: Open Preview Modal
-                setPreviewImage(imageUrl);
-                setIsGenerating(false);
+                // 2. Invisible Fallback: Copy Image + Download
+                try {
+                    // Try Copy Image first
+                    if (navigator.clipboard && navigator.clipboard.write) {
+                        const item = new ClipboardItem({ 'image/png': blob });
+                        await navigator.clipboard.write([item]);
+                        setToast({ message: 'Imagem copiada! Cole no WhatsApp.', type: 'success' });
+                    }
+
+                    // Always Download as safety net
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+
+                    if (!navigator.clipboard?.write) {
+                        setToast({ message: 'Imagem salva na galeria!', type: 'success' });
+                    }
+
+                } catch (fallbackError) {
+                    console.error('Fallback failed:', fallbackError);
+                    setToast({ message: 'Erro ao salvar imagem.', type: 'error' });
+                } finally {
+                    setIsGenerating(false);
+                }
 
             }, 'image/png');
         } catch (error) {
-            console.error('Error in generation:', error);
+            console.error('Generation error:', error);
             setIsGenerating(false);
-            alert('Erro ao gerar imagem.');
+            setToast({ message: 'Erro ao gerar imagem.', type: 'error' });
         }
     };
     // --------------------------------------
@@ -1751,99 +1787,25 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
             </div>
             <GateModal />
 
-            {/* Image Preview Modal (Fallback for Mobile) */}
+
+            {/* Minimalist Toast Notification */}
             <AnimatePresence>
-                {previewImage && (
+                {toast && (
                     <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm"
-                        onClick={() => setPreviewImage(null)}
+                        initial={{ opacity: 0, y: 50, scale: 0.9 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 20, scale: 0.95 }}
+                        className={cn(
+                            "fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 backdrop-blur-md border border-white/10",
+                            toast.type === 'success' ? 'bg-emerald-500/90 text-white' : 'bg-red-500/90 text-white'
+                        )}
                     >
-                        <motion.div
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.9, opacity: 0 }}
-                            className="relative max-w-sm w-full bg-[#1e1b4b] rounded-2xl overflow-hidden shadow-2xl border border-[#d4af37]/20"
-                            onClick={e => e.stopPropagation()}
-                        >
-                            <div className="p-4 border-b border-white/10 flex items-center justify-between">
-                                <h3 className="text-white font-bold text-sm">Pronto para compartilhar</h3>
-                                <button
-                                    onClick={() => setPreviewImage(null)}
-                                    className="p-1 rounded-full hover:bg-white/10 text-white/50 hover:text-white transition-colors"
-                                >
-                                    <X className="w-5 h-5" />
-                                </button>
-                            </div>
-
-                            <div className="p-6 flex flex-col items-center gap-6">
-                                <img
-                                    src={previewImage}
-                                    alt="Palavra do Dia"
-                                    className="w-full rounded-lg shadow-lg"
-                                />
-
-                                <div className="p-6 flex flex-col items-center gap-4">
-                                    <img
-                                        src={previewImage}
-                                        alt="Palavra do Dia"
-                                        className="w-full rounded-lg shadow-lg"
-                                    />
-
-                                    <div className="text-center space-y-1">
-                                        <p className="text-[#d4af37] text-xs font-bold uppercase tracking-widest">
-                                            Pronto!
-                                        </p>
-                                        <p className="text-white/60 text-xs">
-                                            Escolha como deseja enviar
-                                        </p>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-3 w-full">
-                                        {navigator.share && (
-                                            <button
-                                                onClick={async () => {
-                                                    try {
-                                                        const blob = await (await fetch(previewImage)).blob();
-                                                        const file = new File([blob], 'palavra-do-dia.png', { type: 'image/png' });
-                                                        await navigator.share({
-                                                            files: [file],
-                                                            title: 'Palavra do Dia',
-                                                            text: `"${dailyWord.text}"`
-                                                        });
-                                                    } catch (e) {
-                                                        console.warn('Share failed', e);
-                                                    }
-                                                }}
-                                                className="py-3 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2 text-xs"
-                                            >
-                                                <Share2 className="w-4 h-4" />
-                                                Compartilhar
-                                            </button>
-                                        )}
-                                        <button
-                                            onClick={() => {
-                                                const a = document.createElement('a');
-                                                a.href = previewImage;
-                                                a.download = `Palavra-do-Dia-${new Date().toISOString().split('T')[0]}.png`;
-                                                document.body.appendChild(a);
-                                                a.click();
-                                                document.body.removeChild(a);
-                                            }}
-                                            className={cn(
-                                                "py-3 bg-[#d4af37] hover:bg-[#b45309] text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2 text-xs",
-                                                !navigator.share && "col-span-2"
-                                            )}
-                                        >
-                                            <Download className="w-4 h-4" />
-                                            Baixar
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </motion.div>
+                        {toast.type === 'success' ? (
+                            <CheckCircle2 className="w-5 h-5 text-white" />
+                        ) : (
+                            <AlertCircle className="w-5 h-5 text-white" />
+                        )}
+                        <span className="text-sm font-bold tracking-wide">{toast.message}</span>
                     </motion.div>
                 )}
             </AnimatePresence>
