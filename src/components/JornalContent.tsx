@@ -301,7 +301,6 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
     // 1. Silent Pre-Generation (Run on load/change)
     useEffect(() => {
         const generateSilent = async () => {
-            return; // DISABLED: Fix for mobile crash
             if (!dailyWord) return;
 
             // Initial check
