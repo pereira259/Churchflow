@@ -266,6 +266,7 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
     const [showDonationModal, setShowDonationModal] = useState(false);
     const [copied, setCopied] = useState(false);
     const { guardAction, GateModal } = useProfileGate();
+    const dailyWord = useMemo(() => getDailyWord(), []);
 
     // Force refetch when opening donation modal to ensure updated PIX keys
     useEffect(() => {
