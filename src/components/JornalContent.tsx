@@ -1,41 +1,25 @@
-﻿import { motion, AnimatePresence } from 'framer-motion';
+﻿import html2canvas from 'html2canvas';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-    QrCode,
-    CalendarDays,
-    Music,
-    Wallet,
-    ArrowUpRight,
-    MapPin,
-    Plus,
-    Check,
-    X,
-    AlertCircle,
-    Copy,
-    Loader2,
-    Share2,
-    Megaphone,
-    ImagePlus,
-    BookOpen,
-    Download,
-    Trash2,
-    Edit2,
-    ChevronLeft,
-    ChevronRight,
-    ImageIcon,
-    Sparkles
+    QrCode, CalendarDays, Music, Wallet, ArrowUpRight, MapPin, Plus, Check, X,
+    AlertCircle, Copy, Loader2, Share2, Megaphone, ImagePlus, BookOpen, Download,
+    Trash2, Edit2, ChevronLeft, ChevronRight, ImageIcon, Sparkles,
+    Calendar, Clock, Bell, Search, Menu, CheckCircle2, Users, DollarSign,
+    FileText, Layout, Settings, LogOut
 } from 'lucide-react';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { updateScheduleStatus, createNews, deleteNews, updateNews } from '@/lib/supabase-queries';
 import { useDashboardData } from '@/lib/dashboard-data';
 import { useAuth } from '@/lib/auth';
 import { cn } from '@/lib/utils';
 import { getDailyWord } from '@/lib/daily-word';
-import { useRef } from 'react';
 import { toBlob } from 'html-to-image';
 import { HolographicCard } from './ui/HolographicCard';
 import { useTutorial } from '@/contexts/TutorialContext';
 import { useProfileGate } from './ProfileGate';
+
+// ... (inside component)
 
 const container = {
     hidden: { opacity: 0 },
@@ -304,12 +288,76 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
         important: false
     });
     const navigate = useNavigate();
-    const shareCardRef = useRef<HTMLDivElement>(null);
+
     const [selectedCategory, setSelectedCategory] = useState<any>('Tudo');
     const [selectedPixType, setSelectedPixType] = useState<string>('main'); // Default to main key
     // Gallery Viewer State
     const [viewingGallery, setViewingGallery] = useState<{ urls: string[], index: number } | null>(null);
     const [editingNews, setEditingNews] = useState<any>(null);
+
+    // --- Image Sharing Logic (Restored) ---
+    const shareCardRef = useRef<HTMLDivElement>(null);
+
+    const handleShareImage = async () => {
+        if (!shareCardRef.current) return;
+        setIsGenerating(true);
+
+        try {
+            // Wait for fonts to load
+            await document.fonts.ready;
+
+            const canvas = await html2canvas(shareCardRef.current, {
+                backgroundColor: null,
+                scale: 2, // Retina quality
+                logging: false,
+                useCORS: true,
+                allowTaint: true,
+            });
+
+            canvas.toBlob(async (blob) => {
+                if (!blob) {
+                    setIsGenerating(false);
+                    return;
+                }
+
+                const file = new File([blob], 'palavra-do-dia.png', { type: 'image/png' });
+
+                try {
+                    if (navigator.share && navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            files: [file],
+                            title: 'Palavra do Dia - ChurchFlow',
+                            text: `"${dailyWord.text}"\n— ${dailyWord.reference}`
+                        });
+                    } else {
+                        // Fallback: Download image
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'palavra-do-dia.png';
+                        a.click();
+                        URL.revokeObjectURL(url);
+                        alert('Imagem baixada! Compartilhe manualmente.');
+                    }
+                } catch (e) {
+                    console.error('Error sharing:', e);
+                    // Fallback to text if sharing fails
+                    if ((e as Error).name !== 'AbortError') {
+                        const shareText = `"${dailyWord.text}"\n— ${dailyWord.reference}\n\nChurchFlow`;
+                        await navigator.clipboard.writeText(shareText);
+                        alert('Não foi possível compartilhar a imagem. Texto copiado!');
+                    }
+                } finally {
+                    setIsGenerating(false);
+                }
+            }, 'image/png');
+        } catch (error) {
+            console.error('Error generating image:', error);
+            setIsGenerating(false);
+            alert('Erro ao gerar imagem. Tente novamente.');
+        }
+    };
+    // --------------------------------------
 
     const compressImage = (file: File): Promise<string> => {
         return new Promise((resolve, reject) => {
@@ -681,26 +729,14 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
                                 Palavra do Dia
                             </span>
                             <button
-                                onClick={async () => {
-                                    const shareText = `"${dailyWord.text}"\n— ${dailyWord.reference}\n\nChurchFlow`;
-                                    try {
-                                        if (navigator.share) {
-                                            await navigator.share({ title: 'Palavra do Dia', text: shareText });
-                                        } else {
-                                            await navigator.clipboard.writeText(shareText);
-                                            alert('Versículo copiado!');
-                                        }
-                                    } catch (e) {
-                                        if ((e as Error).name !== 'AbortError') {
-                                            await navigator.clipboard.writeText(shareText);
-                                            alert('Versículo copiado!');
-                                        }
-                                    }
-                                }}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-all duration-300 min-h-[32px] min-w-[32px]"
+                                onClick={handleShareImage}
+                                disabled={isGenerating}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-all duration-300 min-h-[32px] min-w-[32px] disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                <Share2 className="w-3.5 h-3.5" />
-                                <span className="text-[9px] font-black uppercase tracking-widest hidden md:inline">Compartilhar</span>
+                                {isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Share2 className="w-3.5 h-3.5" />}
+                                <span className="text-[9px] font-black uppercase tracking-widest hidden md:inline">
+                                    {isGenerating ? 'Gerando...' : 'Compartilhar'}
+                                </span>
                             </button>
                         </div>
 
@@ -726,7 +762,15 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
                         </motion.span>
                     </div>
 
-
+                    {/* Hidden Share Card for Image Generation */}
+                    <div className="fixed -left-[9999px] -top-[9999px] pointer-events-none">
+                        <div ref={shareCardRef} className="w-[600px] h-[400px] bg-gradient-to-br from-[#1e1b4b] via-[#111827] to-[#1e1b4b] flex flex-col items-center justify-center p-12 text-center" style={{ fontFamily: 'Playfair Display, serif' }}>
+                            <p className="text-[#d4af37] text-xs font-bold uppercase tracking-[0.3em] mb-6">Palavra do Dia</p>
+                            <p className="text-white text-xl font-bold italic leading-relaxed mb-6">"{dailyWord.text}"</p>
+                            <p className="text-[#d4af37]/80 text-sm tracking-widest uppercase font-bold">{dailyWord.reference}</p>
+                            <p className="text-white/20 text-[10px] mt-8 tracking-widest uppercase">ChurchFlow</p>
+                        </div>
+                    </div>
                 </div>
             </motion.section>
 
