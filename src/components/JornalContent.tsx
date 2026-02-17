@@ -1,6 +1,7 @@
 ﻿import html2canvas from 'html2canvas';
 import { motion, AnimatePresence } from 'framer-motion';
-QrCode, CalendarDays, Music, Wallet, ArrowUpRight, MapPin, Plus, Check, X,
+import {
+    QrCode, CalendarDays, Music, Wallet, ArrowUpRight, MapPin, Plus, Check, X,
     Copy, Loader2, Share2, Megaphone, ImagePlus, BookOpen, Download,
     Trash2, Edit2, ChevronLeft, ChevronRight, ImageIcon, Sparkles,
     Calendar, Clock, Bell, Search, Menu, Users, DollarSign,
