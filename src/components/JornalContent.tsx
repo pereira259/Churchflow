@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     QrCode, CalendarDays, Music, Wallet, ArrowUpRight, MapPin, Plus, Check, X,
     Copy, Loader2, Share2, Megaphone, ImagePlus, BookOpen, Download,
-    Trash2, Edit2, ChevronLeft, ChevronRight, ImageIcon, Sparkles
+    Trash2, Edit2, ChevronLeft, ChevronRight, ImageIcon, Sparkles, AlertCircle
 } from 'lucide-react';
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
