@@ -23,7 +23,7 @@ import { MinisteriosPage } from './pages/MinisteriosPage';
 
 // Pages - Admin Specific
 import { EventosPage } from './pages/admin/EventosPage';
-import MediaStudio from './pages/MediaStudio';
+
 
 // Pages - Líder
 
@@ -164,13 +164,7 @@ export default function App() {
                                 </ProtectedRoute>
                             } />
 
-                            <Route path="/media-studio" element={
-                                <ProtectedRoute requiredRoles={['admin', 'pastor_chefe']}>
-                                    <DashboardLayout>
-                                        <MediaStudio />
-                                    </DashboardLayout>
-                                </ProtectedRoute>
-                            } />
+
 
                             <Route path="/perfil" element={
                                 <ProtectedRoute>
