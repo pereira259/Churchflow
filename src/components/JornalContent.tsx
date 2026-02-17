@@ -301,16 +301,25 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
     // 1. Silent Pre-Generation (Run on load/change)
     useEffect(() => {
         const generateSilent = async () => {
-            if (!shareCardRef.current || !dailyWord) return;
+            if (!dailyWord) return;
+
+            // Initial check
+            if (!shareCardRef.current) {
+                // If ref is not ready, wait a bit triggers retry if needed, but for now just return
+                return;
+            }
 
             try {
                 await document.fonts.ready;
                 // Small delay to ensure DOM is fully painted
                 await new Promise(r => setTimeout(r, 1000));
 
+                // CRITICAL: Re-check existence after delay to prevent crash if unmounted
+                if (!shareCardRef.current) return;
+
                 const canvas = await html2canvas(shareCardRef.current, {
                     backgroundColor: null,
-                    scale: 2,
+                    scale: 1, // Reduced to 1 for safety on mobile (prevents memory crash)
                     logging: false,
                     useCORS: true,
                     allowTaint: true,
@@ -325,12 +334,12 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
                     }
                 }, 'image/png');
             } catch (error) {
-                console.warn('Pre-generation failed:', error);
+                console.warn('Pre-generation failed (silent):', error);
             }
         };
 
         generateSilent();
-    }, [dailyWord, shareCardRef.current]);
+    }, [dailyWord]);
 
     // 2. Instant Share Handler
     const handleShareImage = async () => {
