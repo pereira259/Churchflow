@@ -322,7 +322,6 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
                     scale: 1, // Reduced to 1 for safety on mobile (prevents memory crash)
                     logging: false,
                     useCORS: true,
-                    allowTaint: true,
                 } as any);
 
                 canvas.toBlob((blob) => {
@@ -345,7 +344,11 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
     const handleShareImage = async () => {
         // If pre-generated file exists, use it INSTANTLY
         if (readyToShareFile) {
-            const shareData = { files: [readyToShareFile] };
+            const shareData = {
+                files: [readyToShareFile],
+                title: 'Palavra do Dia',
+                text: dailyWord?.verse ? `"${dailyWord.verse}" - ${dailyWord.reference}` : 'Confira a Palavra do Dia!'
+            };
 
             if (navigator.share && navigator.canShare(shareData)) {
                 try {
@@ -372,7 +375,6 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
                 scale: 2,
                 logging: false,
                 useCORS: true,
-                allowTaint: true,
             } as any);
 
             canvas.toBlob(async (blob) => {
@@ -383,7 +385,11 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
 
                 const fileName = `Palavra-do-Dia-${new Date().toISOString().split('T')[0]}.png`;
                 const file = new File([blob], fileName, { type: 'image/png' });
-                const shareData = { files: [file] };
+                const shareData = {
+                    files: [file],
+                    title: 'Palavra do Dia',
+                    text: dailyWord?.verse ? `"${dailyWord.verse}" - ${dailyWord.reference}` : 'Confira a Palavra do Dia!'
+                };
 
                 if (navigator.share && navigator.canShare(shareData)) {
                     try {
