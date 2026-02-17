@@ -294,7 +294,7 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
     const [viewingGallery, setViewingGallery] = useState<{ urls: string[], index: number } | null>(null);
     const [editingNews, setEditingNews] = useState<any>(null);
 
-    // --- Image Sharing Logic (Direct & Invisible Fallback) ---
+    // --- Image Sharing Logic (Strict Native Share Only) ---
     const shareCardRef = useRef<HTMLDivElement>(null);
 
     const handleShareImage = async () => {
@@ -327,9 +327,9 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
                     text: `"${dailyWord.text}"`
                 };
 
-                // STRATEGY: Aggressive Native Share -> Invisible Fallback
+                // STRATEGY: Strict Native Share (No Download Fallback)
 
-                // 1. Native Share (Try it even if validation is strict)
+                // 1. Native Share
                 if (navigator.share) {
                     try {
                         await navigator.share(shareData);
@@ -340,30 +340,18 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
                             setIsGenerating(false);
                             return; // User cancelled
                         }
-                        console.warn('Share failed, trying fallback...', e);
+                        console.warn('Share failed, trying clipboard...', e);
                     }
                 }
 
-                // 2. Invisible Fallback: Copy Image + Download
+                // 2. Clipboard Fallback (Silent) - ONLY if share fails
                 try {
-                    // Try Copy Image first
                     if (navigator.clipboard && navigator.clipboard.write) {
                         const item = new ClipboardItem({ 'image/png': blob });
                         await navigator.clipboard.write([item]);
                     }
-
-                    // Always Download as safety net
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = fileName;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-
                 } catch (fallbackError) {
-                    console.error('Fallback failed:', fallbackError);
+                    console.error('Clipboard failed', fallbackError);
                 } finally {
                     setIsGenerating(false);
                 }
