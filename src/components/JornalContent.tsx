@@ -1,10 +1,9 @@
 ﻿import html2canvas from 'html2canvas';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-    QrCode, CalendarDays, Music, Wallet, ArrowUpRight, MapPin, Plus, Check, X,
-    AlertCircle, Copy, Loader2, Share2, Megaphone, ImagePlus, BookOpen, Download,
+QrCode, CalendarDays, Music, Wallet, ArrowUpRight, MapPin, Plus, Check, X,
+    Copy, Loader2, Share2, Megaphone, ImagePlus, BookOpen, Download,
     Trash2, Edit2, ChevronLeft, ChevronRight, ImageIcon, Sparkles,
-    Calendar, Clock, Bell, Search, Menu, CheckCircle2, Users, DollarSign,
+    Calendar, Clock, Bell, Search, Menu, Users, DollarSign,
     FileText, Layout, Settings, LogOut
 } from 'lucide-react';
 import { useState, useMemo, useEffect, useRef } from 'react';
@@ -297,15 +296,6 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
 
     // --- Image Sharing Logic (Direct & Invisible Fallback) ---
     const shareCardRef = useRef<HTMLDivElement>(null);
-    const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-
-    // Auto-dismiss toast
-    useEffect(() => {
-        if (toast) {
-            const timer = setTimeout(() => setToast(null), 3000);
-            return () => clearTimeout(timer);
-        }
-    }, [toast]);
 
     const handleShareImage = async () => {
         if (!shareCardRef.current || isGenerating) return;
@@ -360,7 +350,6 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
                     if (navigator.clipboard && navigator.clipboard.write) {
                         const item = new ClipboardItem({ 'image/png': blob });
                         await navigator.clipboard.write([item]);
-                        setToast({ message: 'Imagem copiada! Cole no WhatsApp.', type: 'success' });
                     }
 
                     // Always Download as safety net
@@ -373,13 +362,8 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
                     document.body.removeChild(a);
                     URL.revokeObjectURL(url);
 
-                    if (!navigator.clipboard?.write) {
-                        setToast({ message: 'Imagem salva na galeria!', type: 'success' });
-                    }
-
                 } catch (fallbackError) {
                     console.error('Fallback failed:', fallbackError);
-                    setToast({ message: 'Erro ao salvar imagem.', type: 'error' });
                 } finally {
                     setIsGenerating(false);
                 }
@@ -388,7 +372,6 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
         } catch (error) {
             console.error('Generation error:', error);
             setIsGenerating(false);
-            setToast({ message: 'Erro ao gerar imagem.', type: 'error' });
         }
     };
     // --------------------------------------
@@ -1788,27 +1771,7 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
             <GateModal />
 
 
-            {/* Minimalist Toast Notification */}
-            <AnimatePresence>
-                {toast && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 50, scale: 0.9 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                        className={cn(
-                            "fixed bottom-24 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 backdrop-blur-md border border-white/10",
-                            toast.type === 'success' ? 'bg-emerald-500/90 text-white' : 'bg-red-500/90 text-white'
-                        )}
-                    >
-                        {toast.type === 'success' ? (
-                            <CheckCircle2 className="w-5 h-5 text-white" />
-                        ) : (
-                            <AlertCircle className="w-5 h-5 text-white" />
-                        )}
-                        <span className="text-sm font-bold tracking-wide">{toast.message}</span>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+
 
         </motion.div>
     );
