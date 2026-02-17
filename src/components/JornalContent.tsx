@@ -327,34 +327,20 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
                     text: `"${dailyWord.text}"`
                 };
 
-                // STRATEGY: Strict Native Share (No Download Fallback)
+                // STRATEGY: Strict Native Share ONLY (No Download, No Copy, No Fallback)
 
-                // 1. Native Share
                 if (navigator.share) {
                     try {
                         await navigator.share(shareData);
-                        setIsGenerating(false);
-                        return; // Success!
                     } catch (e) {
-                        if ((e as Error).name === 'AbortError') {
-                            setIsGenerating(false);
-                            return; // User cancelled
-                        }
-                        console.warn('Share failed, trying clipboard...', e);
+                        // User cancelled or share failed. Do nothing.
+                        console.warn('Share interaction ended:', e);
                     }
+                } else {
+                    console.warn('Web Share API not supported on this device.');
                 }
 
-                // 2. Clipboard Fallback (Silent) - ONLY if share fails
-                try {
-                    if (navigator.clipboard && navigator.clipboard.write) {
-                        const item = new ClipboardItem({ 'image/png': blob });
-                        await navigator.clipboard.write([item]);
-                    }
-                } catch (fallbackError) {
-                    console.error('Clipboard failed', fallbackError);
-                } finally {
-                    setIsGenerating(false);
-                }
+                setIsGenerating(false);
 
             }, 'image/png');
         } catch (error) {
