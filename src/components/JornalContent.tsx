@@ -3,9 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     QrCode, CalendarDays, Music, Wallet, ArrowUpRight, MapPin, Plus, Check, X,
     Copy, Loader2, Share2, Megaphone, ImagePlus, BookOpen, Download,
-    Trash2, Edit2, ChevronLeft, ChevronRight, ImageIcon, Sparkles,
-    Calendar, Clock, Bell, Search, Menu, Users, DollarSign,
-    FileText, Layout, Settings, LogOut
+    Trash2, Edit2, ChevronLeft, ChevronRight, ImageIcon, Sparkles
 } from 'lucide-react';
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
@@ -290,22 +288,74 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
     const navigate = useNavigate();
 
     const [selectedCategory, setSelectedCategory] = useState<any>('Tudo');
-    const [selectedPixType, setSelectedPixType] = useState<string>('main'); // Default to main key
     // Gallery Viewer State
     const [viewingGallery, setViewingGallery] = useState<{ urls: string[], index: number } | null>(null);
     const [editingNews, setEditingNews] = useState<any>(null);
 
-    // --- Image Sharing Logic (Strict Native Share Only) ---
+    // --- Image Sharing Logic (Pre-Generation Strategy) ---
     const shareCardRef = useRef<HTMLDivElement>(null);
+    const [readyToShareFile, setReadyToShareFile] = useState<File | null>(null);
 
+    // 1. Silent Pre-Generation (Run on load/change)
+    useEffect(() => {
+        const generateSilent = async () => {
+            if (!shareCardRef.current || !dailyWord) return;
+
+            try {
+                await document.fonts.ready;
+                // Small delay to ensure DOM is fully painted
+                await new Promise(r => setTimeout(r, 1000));
+
+                const canvas = await html2canvas(shareCardRef.current, {
+                    backgroundColor: null,
+                    scale: 2,
+                    logging: false,
+                    useCORS: true,
+                    allowTaint: true,
+                });
+
+                canvas.toBlob((blob) => {
+                    if (blob) {
+                        const fileName = `Palavra-do-Dia-${new Date().toISOString().split('T')[0]}.png`;
+                        const file = new File([blob], fileName, { type: 'image/png' });
+                        setReadyToShareFile(file);
+                        console.log('Share image pre-generated successfully');
+                    }
+                }, 'image/png');
+            } catch (error) {
+                console.warn('Pre-generation failed:', error);
+            }
+        };
+
+        generateSilent();
+    }, [dailyWord, shareCardRef.current]);
+
+    // 2. Instant Share Handler
     const handleShareImage = async () => {
+        // If pre-generated file exists, use it INSTANTLY
+        if (readyToShareFile) {
+            const shareData = { files: [readyToShareFile] };
+
+            if (navigator.share && navigator.canShare(shareData)) {
+                try {
+                    await navigator.share(shareData);
+                } catch (e) {
+                    if ((e as Error).name !== 'AbortError') {
+                        alert('Erro ao abrir compartilhamento. Tente novamente.');
+                    }
+                }
+            } else {
+                alert('Seu dispositivo não suporta compartilhamento direto de imagem.');
+            }
+            return;
+        }
+
+        // Fallback: Generate on demand (if pre-gen failed or wasn't ready)
         if (!shareCardRef.current || isGenerating) return;
         setIsGenerating(true);
 
         try {
             await document.fonts.ready;
-
-            // Generate canvas with better settings
             const canvas = await html2canvas(shareCardRef.current, {
                 backgroundColor: null,
                 scale: 2,
@@ -322,34 +372,20 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
 
                 const fileName = `Palavra-do-Dia-${new Date().toISOString().split('T')[0]}.png`;
                 const file = new File([blob], fileName, { type: 'image/png' });
-                const shareData = {
-                    files: [file]
-                    // Removing title/text to maximize compatibility (Android often fails when mixing types)
-                };
+                const shareData = { files: [file] };
 
-                // STRATEGY: Strict Native Share with Validation
-
-                if (navigator.canShare && navigator.canShare(shareData)) {
+                if (navigator.share && navigator.canShare(shareData)) {
                     try {
                         await navigator.share(shareData);
                     } catch (e) {
-                        // User cancelled or share failed.
-                        // We must NOT fallback to download/clipboard as per user request.
-                        console.warn('Share interaction ended:', e);
-
-                        // If it wasn't a cancellation, alert the user (Debug Mode)
                         if ((e as Error).name !== 'AbortError') {
                             alert('Erro ao abrir compartilhamento. Tente novamente.');
                         }
                     }
                 } else {
-                    console.warn('Device does not support sharing this file type.');
-                    // Minimal feedback so user knows why it clicked and nothing happened
                     alert('Seu dispositivo não suporta compartilhamento direto de imagem.');
                 }
-
                 setIsGenerating(false);
-
             }, 'image/png');
         } catch (error) {
             console.error('Generation error:', error);
