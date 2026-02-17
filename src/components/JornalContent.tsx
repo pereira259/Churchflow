@@ -297,18 +297,17 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
 
     // --- Image Sharing Logic (Restored) ---
     const shareCardRef = useRef<HTMLDivElement>(null);
+    const [previewImage, setPreviewImage] = useState<string | null>(null);
 
     const handleShareImage = async () => {
         if (!shareCardRef.current) return;
         setIsGenerating(true);
 
         try {
-            // Wait for fonts to load
             await document.fonts.ready;
-
             const canvas = await html2canvas(shareCardRef.current, {
                 backgroundColor: null,
-                scale: 2, // Retina quality
+                scale: 2,
                 logging: false,
                 useCORS: true,
                 allowTaint: true,
@@ -322,67 +321,38 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
 
                 const fileName = `Palavra-do-Dia-${new Date().toISOString().split('T')[0]}.png`;
                 const file = new File([blob], fileName, { type: 'image/png' });
+                const imageUrl = URL.createObjectURL(blob);
 
-                // 1. Try Native Share (Mobile)
-                // Note: check for 'files' support specifically
+                // Strategy: 
+                // 1. Try Native Share (Files) - Best for Mobile
+                // 2. Fallback to Preview Modal (allows long-press save/share) - Better UX than blind download
+
                 if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
                     try {
                         await navigator.share({
                             files: [file],
-                            title: 'Palavra do Dia - ChurchFlow',
+                            title: 'Palavra do Dia',
                             text: `"${dailyWord.text}"\n— ${dailyWord.reference}`
                         });
                         setIsGenerating(false);
-                        return; // Success
-                    } catch (shareError) {
-                        // If user cancelled, just stop
-                        if ((shareError as Error).name === 'AbortError') {
+                        return;
+                    } catch (e) {
+                        if ((e as Error).name === 'AbortError') {
                             setIsGenerating(false);
                             return;
                         }
-                        console.warn('Native share failed, trying clipboard...', shareError);
                     }
                 }
 
-                // 2. Try Clipboard (Copy Image) - Good for avoiding permissions on some devices
-                try {
-                    if (navigator.clipboard && navigator.clipboard.write) {
-                        const item = new ClipboardItem({ 'image/png': blob });
-                        await navigator.clipboard.write([item]);
-                        alert('Imagem copiada para a área de transferência! Cole no seu app favorito.');
-                        setIsGenerating(false);
-                        return;
-                    }
-                } catch (clipboardError) {
-                    console.warn('Clipboard write failed, falling back to download...', clipboardError);
-                }
-
-                // 3. Fallback: Download
-                try {
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = fileName;
-                    document.body.appendChild(a); // Append to body for Firefox support
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                    alert('Imagem salva! Compartilhe manualmente.');
-                } catch (downloadError) {
-                    console.error('Download failed:', downloadError);
-                    // Last resort: just copy text
-                    const shareText = `"${dailyWord.text}"\n— ${dailyWord.reference}\n\nChurchFlow`;
-                    await navigator.clipboard.writeText(shareText);
-                    alert('Não foi possível gerar a imagem. Texto do versículo copiado!');
-                } finally {
-                    setIsGenerating(false);
-                }
+                // Fallback: Open Preview Modal
+                setPreviewImage(imageUrl);
+                setIsGenerating(false);
 
             }, 'image/png');
         } catch (error) {
-            console.error('Error generating image:', error);
+            console.error('Error in generation:', error);
             setIsGenerating(false);
-            alert('Erro ao gerar imagem. Tente novamente.');
+            alert('Erro ao gerar imagem.');
         }
     };
     // --------------------------------------
@@ -1744,6 +1714,70 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
                 </div>
             </div>
             <GateModal />
-        </motion.div >
+
+            {/* Image Preview Modal (Fallback for Mobile) */}
+            <AnimatePresence>
+                {previewImage && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm"
+                        onClick={() => setPreviewImage(null)}
+                    >
+                        <motion.div
+                            initial={{ scale: 0.9, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.9, opacity: 0 }}
+                            className="relative max-w-sm w-full bg-[#1e1b4b] rounded-2xl overflow-hidden shadow-2xl border border-[#d4af37]/20"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <div className="p-4 border-b border-white/10 flex items-center justify-between">
+                                <h3 className="text-white font-bold text-sm">Pronto para compartilhar</h3>
+                                <button
+                                    onClick={() => setPreviewImage(null)}
+                                    className="p-1 rounded-full hover:bg-white/10 text-white/50 hover:text-white transition-colors"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+
+                            <div className="p-6 flex flex-col items-center gap-6">
+                                <img
+                                    src={previewImage}
+                                    alt="Palavra do Dia"
+                                    className="w-full rounded-lg shadow-lg"
+                                />
+
+                                <div className="text-center space-y-2">
+                                    <p className="text-[#d4af37] text-xs font-bold uppercase tracking-widest">
+                                        Pressione a imagem para salvar
+                                    </p>
+                                    <p className="text-white/60 text-xs">
+                                        Ou use o botão abaixo para baixar
+                                    </p>
+                                </div>
+
+                                <button
+                                    onClick={() => {
+                                        const a = document.createElement('a');
+                                        a.href = previewImage;
+                                        a.download = `Palavra-do-Dia-${new Date().toISOString().split('T')[0]}.png`;
+                                        document.body.appendChild(a);
+                                        a.click();
+                                        document.body.removeChild(a);
+                                    }}
+                                    className="w-full py-3 bg-[#d4af37] hover:bg-[#b45309] text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
+                                >
+                                    <Download className="w-4 h-4" />
+                                    Baixar Imagem
+                                </button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+        </motion.div>
     );
 }
