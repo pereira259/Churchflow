@@ -288,6 +288,7 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
     const navigate = useNavigate();
 
     const [selectedCategory, setSelectedCategory] = useState<any>('Tudo');
+    const [selectedPixType, setSelectedPixType] = useState<string>('main'); // Default to main key
     // Gallery Viewer State
     const [viewingGallery, setViewingGallery] = useState<{ urls: string[], index: number } | null>(null);
     const [editingNews, setEditingNews] = useState<any>(null);
@@ -312,7 +313,7 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
                     logging: false,
                     useCORS: true,
                     allowTaint: true,
-                });
+                } as any);
 
                 canvas.toBlob((blob) => {
                     if (blob) {
@@ -362,7 +363,7 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
                 logging: false,
                 useCORS: true,
                 allowTaint: true,
-            });
+            } as any);
 
             canvas.toBlob(async (blob) => {
                 if (!blob) {
