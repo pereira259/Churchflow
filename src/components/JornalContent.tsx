@@ -298,18 +298,66 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
     const shareCardRef = useRef<HTMLDivElement>(null);
     const [readyToShareFile, setReadyToShareFile] = useState<File | null>(null);
 
-    // 1. Silent Pre-Generation (DISABLED: Using On-Demand for Reliability)
-    /*
+    // 1. Silent Pre-Generation (Active for Instant Share)
     useEffect(() => {
         const generateSilent = async () => {
-             // ... disabled ...
+            if (!dailyWord) return;
+
+            // Initial check
+            if (!shareCardRef.current) return;
+
+            try {
+                await document.fonts.ready;
+                // Small delay to ensure DOM is fully painted
+                await new Promise(r => setTimeout(r, 1000));
+
+                // Re-check existence
+                if (!shareCardRef.current) return;
+
+                const canvas = await html2canvas(shareCardRef.current, {
+                    backgroundColor: null,
+                    scale: 1.5, // Standard quality
+                    logging: false,
+                    useCORS: true,
+                } as any);
+
+                canvas.toBlob((blob) => {
+                    if (blob) {
+                        const fileName = `Palavra-do-Dia-${new Date().toISOString().split('T')[0]}.png`;
+                        const file = new File([blob], fileName, { type: 'image/png' });
+                        setReadyToShareFile(file);
+                    }
+                }, 'image/png');
+            } catch (error) {
+                console.warn('Pre-generation failed (silent):', error);
+            }
         };
+
         generateSilent();
     }, [dailyWord]);
-    */
 
     // 2. Instant Share Handler (On-Demand with Fallbacks)
+    // 2. Instant Share Handler (Pre-gen Priority + No Download)
     const handleShareImage = async () => {
+        const shareData = (file: File) => ({
+            files: [file],
+            title: 'Palavra do Dia',
+            text: dailyWord?.verse ? `"${dailyWord.verse}" - ${dailyWord.reference}` : 'Confira a Palavra do Dia!'
+        });
+
+        // OPTION A: Pre-generated (Best for User Gesture)
+        if (readyToShareFile) {
+            if (navigator.share && navigator.canShare({ files: [readyToShareFile] })) {
+                try {
+                    await navigator.share(shareData(readyToShareFile));
+                    return;
+                } catch (e) {
+                    // If aborted or failed, try regeneration
+                }
+            }
+        }
+
+        // OPTION B: On-Demand Generation (Fallback)
         if (!shareCardRef.current || isGenerating) return;
         setIsGenerating(true);
 
@@ -317,7 +365,7 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
             await document.fonts.ready;
             const canvas = await html2canvas(shareCardRef.current, {
                 backgroundColor: null,
-                scale: 1.5, // Good balance of quality/performance
+                scale: 1.5,
                 logging: false,
                 useCORS: true,
             } as any);
@@ -325,45 +373,21 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
             canvas.toBlob(async (blob) => {
                 if (!blob) {
                     setIsGenerating(false);
-                    alert('Erro ao gerar imagem. Tente novamente.');
                     return;
                 }
 
                 const fileName = `Palavra-do-Dia-${new Date().toISOString().split('T')[0]}.png`;
                 const file = new File([blob], fileName, { type: 'image/png' });
 
-                // Fallback Chain
-                try {
-                    // Attempt 1: Full Share (File + Text)
-                    const shareData = {
-                        files: [file],
-                        title: 'Palavra do Dia',
-                        text: dailyWord?.verse ? `"${dailyWord.verse}" - ${dailyWord.reference}` : 'Confira a Palavra do Dia!'
-                    };
-
-                    if (navigator.share && navigator.canShare({ files: [file] })) {
-                        await navigator.share(shareData);
-                    } else {
-                        throw new Error('Web Share API not fully supported');
-                    }
-                } catch (firstError) {
-                    console.warn('Share Attempt 1 failed, trying File Only:', firstError);
+                if (navigator.share && navigator.canShare({ files: [file] })) {
                     try {
-                        // Attempt 2: File Only (Some Androids prefer this)
-                        await navigator.share({ files: [file] });
-                    } catch (secondError) {
-                        console.warn('Share Attempt 2 failed, forcing Download:', secondError);
-                        // Attempt 3: Force Download
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = fileName;
-                        document.body.appendChild(a);
-                        a.click();
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(url);
-                        alert('Compartilhamento falhou, mas a imagem foi salva no seu dispositivo!');
+                        await navigator.share(shareData(file));
+                    } catch (e) {
+                        // Share failed or cancelled. DO NOT DOWNLOAD.
+                        console.warn('Share failed:', e);
                     }
+                } else {
+                    alert('Seu dispositivo não suporta compartilhamento direto.');
                 }
 
                 setIsGenerating(false);
@@ -371,7 +395,6 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
         } catch (error) {
             console.error('Generation Error:', error);
             setIsGenerating(false);
-            alert('Erro ao processar imagem.');
         }
     };
     // --------------------------------------
