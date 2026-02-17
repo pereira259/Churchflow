@@ -323,22 +323,29 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
                 const fileName = `Palavra-do-Dia-${new Date().toISOString().split('T')[0]}.png`;
                 const file = new File([blob], fileName, { type: 'image/png' });
                 const shareData = {
-                    files: [file],
-                    title: 'Palavra do Dia',
-                    text: `"${dailyWord.text}"`
+                    files: [file]
+                    // Removing title/text to maximize compatibility (Android often fails when mixing types)
                 };
 
-                // STRATEGY: Strict Native Share ONLY (No Download, No Copy, No Fallback)
+                // STRATEGY: Strict Native Share with Validation
 
-                if (navigator.share) {
+                if (navigator.canShare && navigator.canShare(shareData)) {
                     try {
                         await navigator.share(shareData);
                     } catch (e) {
-                        // User cancelled or share failed. Do nothing.
+                        // User cancelled or share failed.
+                        // We must NOT fallback to download/clipboard as per user request.
                         console.warn('Share interaction ended:', e);
+
+                        // If it wasn't a cancellation, alert the user (Debug Mode)
+                        if ((e as Error).name !== 'AbortError') {
+                            alert('Erro ao abrir compartilhamento. Tente novamente.');
+                        }
                     }
                 } else {
-                    console.warn('Web Share API not supported on this device.');
+                    console.warn('Device does not support sharing this file type.');
+                    // Minimal feedback so user knows why it clicked and nothing happened
+                    alert('Seu dispositivo não suporta compartilhamento direto de imagem.');
                 }
 
                 setIsGenerating(false);
