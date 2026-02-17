@@ -659,7 +659,7 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
             {/* Hero Section - Word of the Day */}
             <motion.section variants={item} className="shrink-0">
                 <div className={cn(
-                    "relative rounded-2xl p-2.5 md:p-3 overflow-hidden shadow-lg transition-all duration-1000",
+                    "relative rounded-2xl px-6 py-2 md:px-10 md:py-2.5 overflow-hidden shadow-lg transition-all duration-1000",
                     isNight
                         ? "bg-gradient-to-br from-[#020617] via-[#111827] to-[#1e1b4b] ring-1 ring-white/5"
                         : "bg-[#1e1b4b]"
@@ -675,7 +675,7 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
                     <div className="absolute top-0 right-0 p-4 opacity-5 font-display font-black text-6xl text-[#d4af37] select-none pointer-events-none">"</div>
                     <div className="absolute -bottom-6 -left-6 w-24 h-24 bg-[#d4af37]/10 rounded-full blur-xl" />
 
-                    <div className="relative z-10 flex flex-col items-center text-center gap-2">
+                    <div className="relative z-10 flex flex-col items-center text-center gap-1">
                         <div className="flex items-center gap-3">
                             <span className="px-2 py-0.5 rounded-full border border-[#d4af37]/20 bg-[#d4af37]/10 text-[8px] font-black uppercase tracking-[0.2em] text-[#d4af37]">
                                 Palavra do Dia
@@ -683,24 +683,23 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
                             <button
                                 onClick={handleShareImage}
                                 disabled={isGenerating}
-                                className={cn(
-                                    "flex items-center gap-1.5 px-2 py-0.5 rounded-full transition-all duration-300",
-                                    isGenerating ? "bg-white/10 text-white/40 cursor-wait" : "bg-white/5 hover:bg-white/10 text-white/60 hover:text-white"
-                                )}
+                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/5 hover:bg-white/10 text-white/60 hover:text-white transition-all duration-300 min-h-[32px] min-w-[32px] disabled:opacity-50"
                             >
-                                {isGenerating ? <Loader2 className="w-2.5 h-2.5 animate-spin" /> : <Share2 className="w-2.5 h-2.5" />}
-                                <span className="text-[7px] font-black uppercase tracking-widest">{isGenerating ? 'Gerando...' : 'Compartilhar'}</span>
+                                {isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Share2 className="w-3.5 h-3.5" />}
+                                <span className="text-[9px] font-black uppercase tracking-widest hidden md:inline">{isGenerating ? 'Gerando...' : 'Compartilhar'}</span>
                             </button>
                         </div>
 
-                        <motion.h2
-                            key={dailyWord.text}
-                            initial={{ opacity: 0, y: 5 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="font-display text-lg md:text-xl font-bold italic text-white leading-snug max-w-lg mt-1"
-                        >
-                            "{dailyWord.text}"
-                        </motion.h2>
+                        <motion.div className="text-center w-full mt-0.5">
+                            <motion.h2
+                                key={dailyWord.text}
+                                initial={{ opacity: 0, y: 5 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="font-display text-base md:text-lg font-bold italic text-white leading-snug"
+                            >
+                                "{dailyWord.text}"
+                            </motion.h2>
+                        </motion.div>
 
                         <motion.span
                             key={dailyWord.reference}
@@ -711,6 +710,16 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
                         >
                             {dailyWord.reference}
                         </motion.span>
+                    </div>
+
+                    {/* Hidden Share Card for Image Generation */}
+                    <div className="fixed -left-[9999px] -top-[9999px] pointer-events-none">
+                        <div ref={shareCardRef} className="w-[600px] h-[400px] bg-gradient-to-br from-[#1e1b4b] via-[#111827] to-[#1e1b4b] flex flex-col items-center justify-center p-12 text-center" style={{ fontFamily: 'Playfair Display, serif' }}>
+                            <p className="text-[#d4af37] text-xs font-bold uppercase tracking-[0.3em] mb-6">Palavra do Dia</p>
+                            <p className="text-white text-xl font-bold italic leading-relaxed mb-6">"{dailyWord.text}"</p>
+                            <p className="text-[#d4af37]/80 text-sm tracking-widest uppercase font-bold">{dailyWord.reference}</p>
+                            <p className="text-white/20 text-[10px] mt-8 tracking-widest uppercase">ChurchFlow</p>
+                        </div>
                     </div>
                 </div>
             </motion.section>
