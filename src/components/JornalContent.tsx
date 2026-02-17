@@ -736,10 +736,12 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
                             <div className="absolute bottom-12 right-12 w-32 h-32 border-b-2 border-r-2 border-[#d4af37]/30 rounded-br-3xl z-10" />
 
                             {/* Content Container */}
-                            <div className="relative z-20 flex flex-col items-center max-w-4xl">
+                            <div className="relative z-20 flex flex-col items-center max-w-4xl w-full">
                                 {/* Header Pill */}
-                                <div className="px-8 py-3 rounded-full border border-[#d4af37]/30 bg-[#d4af37]/5 mb-16 backdrop-blur-sm">
-                                    <p className="text-[#d4af37] text-lg font-bold uppercase tracking-[0.4em] font-sans">Palavra do Dia</p>
+                                <div className="inline-flex items-center justify-center px-10 py-4 rounded-full border border-[#d4af37]/40 bg-[#d4af37]/10 mb-16 backdrop-blur-md shadow-2xl">
+                                    <span className="text-[#d4af37] text-2xl font-bold uppercase tracking-[0.3em] font-sans text-center leading-none pl-[0.3em]">
+                                        Palavra do Dia
+                                    </span>
                                 </div>
 
                                 {/* Verse Text - Large & Elegant */}
@@ -1783,29 +1785,63 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
                                     className="w-full rounded-lg shadow-lg"
                                 />
 
-                                <div className="text-center space-y-2">
-                                    <p className="text-[#d4af37] text-xs font-bold uppercase tracking-widest">
-                                        Pressione a imagem para salvar
-                                    </p>
-                                    <p className="text-white/60 text-xs">
-                                        Ou use o botão abaixo para baixar
-                                    </p>
-                                </div>
+                                <div className="p-6 flex flex-col items-center gap-4">
+                                    <img
+                                        src={previewImage}
+                                        alt="Palavra do Dia"
+                                        className="w-full rounded-lg shadow-lg"
+                                    />
 
-                                <button
-                                    onClick={() => {
-                                        const a = document.createElement('a');
-                                        a.href = previewImage;
-                                        a.download = `Palavra-do-Dia-${new Date().toISOString().split('T')[0]}.png`;
-                                        document.body.appendChild(a);
-                                        a.click();
-                                        document.body.removeChild(a);
-                                    }}
-                                    className="w-full py-3 bg-[#d4af37] hover:bg-[#b45309] text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
-                                >
-                                    <Download className="w-4 h-4" />
-                                    Baixar Imagem
-                                </button>
+                                    <div className="text-center space-y-1">
+                                        <p className="text-[#d4af37] text-xs font-bold uppercase tracking-widest">
+                                            Pronto!
+                                        </p>
+                                        <p className="text-white/60 text-xs">
+                                            Escolha como deseja enviar
+                                        </p>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3 w-full">
+                                        {navigator.share && (
+                                            <button
+                                                onClick={async () => {
+                                                    try {
+                                                        const blob = await (await fetch(previewImage)).blob();
+                                                        const file = new File([blob], 'palavra-do-dia.png', { type: 'image/png' });
+                                                        await navigator.share({
+                                                            files: [file],
+                                                            title: 'Palavra do Dia',
+                                                            text: `"${dailyWord.text}"`
+                                                        });
+                                                    } catch (e) {
+                                                        console.warn('Share failed', e);
+                                                    }
+                                                }}
+                                                className="py-3 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2 text-xs"
+                                            >
+                                                <Share2 className="w-4 h-4" />
+                                                Compartilhar
+                                            </button>
+                                        )}
+                                        <button
+                                            onClick={() => {
+                                                const a = document.createElement('a');
+                                                a.href = previewImage;
+                                                a.download = `Palavra-do-Dia-${new Date().toISOString().split('T')[0]}.png`;
+                                                document.body.appendChild(a);
+                                                a.click();
+                                                document.body.removeChild(a);
+                                            }}
+                                            className={cn(
+                                                "py-3 bg-[#d4af37] hover:bg-[#b45309] text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2 text-xs",
+                                                !navigator.share && "col-span-2"
+                                            )}
+                                        >
+                                            <Download className="w-4 h-4" />
+                                            Baixar
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </motion.div>
                     </motion.div>
