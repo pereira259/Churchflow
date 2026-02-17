@@ -499,7 +499,7 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
         return hour >= 18 || hour < 6;
     }, []);
 
-    const dailyWord = useMemo(() => getDailyWord(), []);
+
 
     // --- Tour Logic ---
     const { startShowcase } = useTutorial();
