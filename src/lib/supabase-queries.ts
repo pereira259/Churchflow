@@ -542,7 +542,7 @@ export async function getEventsAfter(churchId: string, date: Date) {
 
     query = query.eq('church_id', churchId);
 
-    const { data, error } = await query;
+    const { data, error } = await query.limit(20);
     return { data: data as Event[] || [], error };
 }
 

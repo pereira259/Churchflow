@@ -80,6 +80,7 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
                     if (cached.churchSettings) setChurchSettings(cached.churchSettings);
                     // We found cache! Cancel loading skeleton immediately
                     showLoading = false;
+                    setIsLoading(false); // <--- CRITICAL FIX: Unlock the UI immediately
                 }
             }
 
