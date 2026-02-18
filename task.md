@@ -25,3 +25,13 @@
     - [x] Fix "Estudos" button (Create page and route)
     - [x] Fix "Grupos" link to trigger ProfileGate
     - [x] Fix ProfileGate modal positioning on mobile
+- [x] **Security Audit & Hardening** <!-- id: 11 -->
+    - [x] Analyze RLS Policies (Row Level Security) <!-- id: 12 -->
+    - [x] **Implement Security Helpers (SQL Functions)** <!-- id: 17 -->
+    - [x] **Secure Core Tables (Churches, Users)** <!-- id: 18 -->
+    - [x] **Secure Data Tables (CRM, Ministries, Finance)** <!-- id: 19 -->
+    - [x] Verify Cross-Tenant Isolation <!-- id: 20 -->
+    - [x] Scan for SQL Injection in stored procedures/functions <!-- id: 13 -->
+    - [x] Check for hardcoded secrets in source code <!-- id: 14 -->
+    - [x] Review API usage and access controls <!-- id: 15 -->
+    - [x] Generate Security Report <!-- id: 16 -->
