@@ -30,31 +30,6 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
     // 1. SYNC CACHE (Text/Metadata)
     // We defer to effect since we need profile to know the key
 
-    // 2. ASYNC CACHE (Images) - Fast Hydration
-    useEffect(() => {
-        if (authLoading) return;
-
-        const hydrateImages = async () => {
-            const currentChurchId = profile?.church_id;
-
-            // Strict check for hydration too
-            if (profile?.id && !currentChurchId) return;
-
-            const effectiveChurchId = currentChurchId;
-            if (!effectiveChurchId) return;
-
-            const cacheKey = `dashboard-data-v5-${effectiveChurchId}`;
-
-            const fullData = await getCachedFull<CachedDashboardData>(cacheKey);
-            if (fullData) {
-                if (fullData.events) setEvents(fullData.events);
-                if (fullData.news) setNews(fullData.news);
-                if (fullData.churchSettings) setChurchSettings(fullData.churchSettings);
-            }
-        };
-        hydrateImages();
-    }, [profile?.church_id]);
-
     const [events, setEvents] = useState<Event[]>([]);
     const [news, setNews] = useState<News[]>([]);
     const [invites, setInvites] = useState<any[]>([]);
@@ -65,7 +40,11 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
 
     const fetchAllData = useCallback(async (silent = false) => {
         if (authLoading) return;
-        if (!silent) setIsLoading(true);
+
+        // --- 1. PRE-CHECK STALE DATA (Prevent Skeleton Flicker) ---
+        // If we already have data in RAM, skip loading state
+        const hasRamData = events.length > 0 || news.length > 0;
+        let showLoading = !silent && !hasRamData;
 
         try {
             const currentChurchId = profile?.church_id;
@@ -90,6 +69,24 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
             }
 
             const cacheKey = `dashboard-data-v5-${effectiveChurchId}`;
+
+            // --- 2. CACHE HYDRATION (Instant Load) ---
+            // Try to load from cache BEFORE network request
+            if (showLoading) {
+                const cached = await getCachedFull<CachedDashboardData>(cacheKey);
+                if (cached) {
+                    if (cached.events?.length > 0) setEvents(cached.events);
+                    if (cached.news?.length > 0) setNews(cached.news);
+                    if (cached.churchSettings) setChurchSettings(cached.churchSettings);
+                    // We found cache! Cancel loading skeleton immediately
+                    showLoading = false;
+                }
+            }
+
+            // Only set loading if really necessary (no RAM data AND no Cache data)
+            if (showLoading) setIsLoading(true);
+
+            // --- 3. NETWORK REVALIDATION ---
             const now = new Date();
             now.setHours(0, 0, 0, 0);
 
@@ -118,8 +115,8 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
             const [eventsResult, newsResult, churchResult] = publicResults;
 
             // Update Public Data State
-            setEvents(eventsResult.data || []);
-            setNews(newsResult.data || []);
+            if (JSON.stringify(eventsResult.data) !== JSON.stringify(events)) setEvents(eventsResult.data || []);
+            if (JSON.stringify(newsResult.data) !== JSON.stringify(news)) setNews(newsResult.data || []);
             setChurchSettings(churchResult.data || null);
 
             // Cache public data (5 minutes TTL)
@@ -146,7 +143,13 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
         } finally {
             setIsLoading(false);
         }
-    }, [profile?.id, authLoading]);
+    }, [profile?.id, authLoading, events, news]); // Added events/news deps for RAM check
+
+    // Fetch data when profile becomes available (Login)
+    useEffect(() => {
+        fetchAllData();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [fetchAllData]);
 
     // Fetch data when profile becomes available (Login)
     useEffect(() => {
