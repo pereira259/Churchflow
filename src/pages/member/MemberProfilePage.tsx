@@ -255,8 +255,8 @@ export function MemberProfilePage() {
             setIsUploading(true);
 
             // Upload to storage
-            const fileName = `${profile.id}-${Math.random()}.jpg`;
-            const filePath = `avatars/${fileName}`;
+            const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
+            const filePath = `avatars/${profile.id}/${fileName}`;
 
             const { error: uploadError } = await supabase.storage
                 .from('church-assets')

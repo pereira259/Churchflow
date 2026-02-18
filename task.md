@@ -35,3 +35,7 @@
     - [x] Check for hardcoded secrets in source code <!-- id: 14 -->
     - [x] Review API usage and access controls <!-- id: 15 -->
     - [x] Generate Security Report <!-- id: 16 -->
+    - [x] **Advanced Hardening (The Last 5%)** <!-- id: 21 -->
+        - [x] Secure Storage Buckets (Avatars/Uploads) <!-- id: 22 -->
+        - [x] Configure Security Headers (CSP, HSTS) <!-- id: 23 -->
+        - [ ] Enable MFA Support (Policy/UI) <!-- id: 24 -->
