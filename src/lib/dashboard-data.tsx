@@ -70,54 +70,54 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
         try {
             const currentChurchId = profile?.church_id;
 
-            // Should not fetch if no church (unless we want a public view, but user asked for strict isolation)
-            // If we fall back to DEFAULT_CHURCH_ID, we leak default events.
-            // Let's fallback ONLY if explicitly intended, or handle empty state.
-            // For this user: strict isolation.
-
-            if (!currentChurchId && profile?.id) {
-                // User logged in but no church? Return empty or prompt to join.
-                setEvents([]);
-                setNews([]);
-                setChurchSettings(null);
-                setIsLoading(false);
-                return;
-            }
-
-            // (Redundant check removed)
-
             // STRICT ISOLATION: If logged in user has no church_id, show NOTHING.
-            // Do NOT fallback to DEFAULT_CHURCH_ID as that leaks "Santa Ceia" etc.
             if (profile?.id && !currentChurchId) {
                 console.warn('[DASHBOARD] User logged in but has no church_id. Showing empty state.');
                 setEvents([]);
                 setNews([]);
                 setChurchSettings(null);
+                setInvites([]);
+                setMySchedules([]);
+                setMyRegistrations([]);
                 setIsLoading(false);
                 return;
             }
 
-            // STRICT: Only fetch if user has a church
             const effectiveChurchId = currentChurchId;
-
             if (!effectiveChurchId) {
                 setIsLoading(false);
                 return;
             }
 
             const cacheKey = `dashboard-data-v5-${effectiveChurchId}`;
-
             const now = new Date();
             now.setHours(0, 0, 0, 0);
 
-            // Fetch public data
-            const [eventsResult, newsResult, churchResult] = await Promise.all([
+            // Preparing Promises for Parallel Execution
+            const publicPromises = [
                 getEventsAfter(effectiveChurchId, now),
                 getNews(effectiveChurchId),
                 getChurchSettings(effectiveChurchId)
+            ] as const;
+
+            // Private data promises (conditionally added)
+            let privatePromise: Promise<[any, any]> | null = null;
+            if (profile?.id && profile?.church_id) {
+                privatePromise = Promise.all([
+                    getMemberSchedulesByUserId(profile.id, profile.church_id),
+                    getMemberRegistrations(profile.id, profile.church_id)
+                ]);
+            }
+
+            // EXECUTE ALL IN PARALLEL
+            const [publicResults, privateResults] = await Promise.all([
+                Promise.all(publicPromises),
+                privatePromise
             ]);
 
-            // Update React state with fetched data
+            const [eventsResult, newsResult, churchResult] = publicResults;
+
+            // Update Public Data State
             setEvents(eventsResult.data || []);
             setNews(newsResult.data || []);
             setChurchSettings(churchResult.data || null);
@@ -129,13 +129,9 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
                 churchSettings: churchResult.data || null
             }, 300000);
 
-            // Fetch private data if profile is available
-            if (profile?.id && profile?.church_id) {
-                const [schedulesRes, regsRes] = await Promise.all([
-                    getMemberSchedulesByUserId(profile.id, profile.church_id),
-                    getMemberRegistrations(profile.id, profile.church_id)
-                ]);
-
+            // Update Private Data State
+            if (privateResults) {
+                const [schedulesRes, regsRes] = privateResults;
                 const schedulesData = schedulesRes.data || [];
                 const pending = schedulesData.filter((s: any) => s.status === 'pendente');
                 const confirmed = schedulesData.filter((s: any) => s.status === 'confirmado');
@@ -144,6 +140,7 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
                 setMySchedules(confirmed);
                 setMyRegistrations(regsRes.data || []);
             }
+
         } catch (error) {
             console.error('[DASHBOARD] Failed to fetch data:', error);
         } finally {

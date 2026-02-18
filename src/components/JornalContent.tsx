@@ -308,8 +308,15 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
 
             try {
                 await document.fonts.ready;
-                // Small delay to ensure DOM is fully painted
-                await new Promise(r => setTimeout(r, 1000));
+                // Defer pre-generation to avoid blocking main thread during initial render
+                // Increased to 2.5s to allow other components to hydrate fully
+                await new Promise(r => setTimeout(r, 2500));
+
+                // Optimize: Don't generate if tab is hidden
+                if (document.hidden) {
+                    console.log('Tab hidden, skipping pre-gen');
+                    return;
+                }
 
                 // Re-check existence
                 if (!shareCardRef.current) return;
