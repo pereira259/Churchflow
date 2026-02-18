@@ -3,7 +3,7 @@ import { Send, User, Bot, BookOpen, BookMarked, Languages, HelpCircle, Zap } fro
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
-import { askNicodemos, type StudyVerse, type KeyTerm } from '@/lib/ai/groq-agent';
+import { askNicodemos, type StudyVerse, type KeyTerm } from '@/lib/ai/nicodemos-agent';
 
 interface Message {
     id: string;
@@ -210,7 +210,7 @@ export function AIChatPage() {
                     <div className="h-6 w-6 rounded-lg bg-[#1e1b4b] flex items-center justify-center text-[#d4af37]">
                         <BookOpen className="h-3 w-3" />
                     </div>
-                    <span className="text-sm font-bold text-[#1e1b4b]">Nicodemos <span className="text-[#d4af37]">IA</span></span>
+                    <span className="text-sm font-bold text-[#1e1b4b]">Nicodemos <span className="text-[#d4af37]">IA v2.0</span></span>
                 </div>
             </div>
 
