@@ -262,58 +262,82 @@ export async function askNicodemos(
         { role: 'user', content: userMessage }
     ];
 
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${GROQ_API_KEY}`
-        },
-        body: JSON.stringify({
-            model: 'llama-3.3-70b-versatile',
-            messages,
-            temperature: questionType === 'exegetical' ? 0.4 : 0.5,
-            max_tokens: maxTokens,
-            top_p: 0.85,
-            response_format: { type: 'json_object' }
-        })
-    });
+    // Models to try in order of preference
+    const models = [
+        'llama-3.3-70b-versatile',
+        'llama-3.1-70b-versatile',
+        'mixtral-8x7b-32768',
+        'llama-3.1-8b-instant'
+    ];
 
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData?.error?.message || `Erro na API Groq: ${response.status}`);
+    let lastError: any;
+
+    for (const model of models) {
+        try {
+            console.log(`[Nicodemos] Tentando modelo: ${model}`); // Debug log
+
+            const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${GROQ_API_KEY}`
+                },
+                body: JSON.stringify({
+                    model: model,
+                    messages,
+                    temperature: questionType === 'exegetical' ? 0.4 : 0.5,
+                    max_tokens: maxTokens,
+                    top_p: 0.85,
+                    response_format: { type: 'json_object' }
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                console.warn(`[Nicodemos] Falha no modelo ${model}:`, errorData);
+                throw new Error(errorData?.error?.message || `Erro API Groq (${response.status})`);
+            }
+
+            const data = await response.json();
+            const rawContent = data.choices?.[0]?.message?.content || '';
+
+            let result: NicodemusResponse;
+
+            try {
+                const parsed = JSON.parse(rawContent);
+                const fixedAnswer = fixMarkdownLineBreaks(parsed.answer || rawContent);
+
+                result = {
+                    answer: fixedAnswer,
+                    verses: validateVerses(parsed.verses),
+                    keyTerms: validateKeyTerms(parsed.keyTerms),
+                    suggestedQuestions: Array.isArray(parsed.suggestedQuestions)
+                        ? parsed.suggestedQuestions.filter((q: unknown) => typeof q === 'string' && q.length > 0)
+                        : [],
+                    model: data.model || model
+                };
+            } catch {
+                result = {
+                    answer: fixMarkdownLineBreaks(rawContent),
+                    verses: [],
+                    keyTerms: [],
+                    suggestedQuestions: [],
+                    model: data.model || model
+                };
+            }
+
+            if (conversationHistory.length === 0) {
+                setCachedResponse(userMessage, result);
+            }
+
+            return result; // Success! Return immediately.
+
+        } catch (error) {
+            lastError = error;
+            // Continue to next model
+        }
     }
 
-    const data = await response.json();
-    const rawContent = data.choices?.[0]?.message?.content || '';
-
-    let result: NicodemusResponse;
-
-    try {
-        const parsed = JSON.parse(rawContent);
-        const fixedAnswer = fixMarkdownLineBreaks(parsed.answer || rawContent);
-
-        result = {
-            answer: fixedAnswer,
-            verses: validateVerses(parsed.verses),
-            keyTerms: validateKeyTerms(parsed.keyTerms),
-            suggestedQuestions: Array.isArray(parsed.suggestedQuestions)
-                ? parsed.suggestedQuestions.filter((q: unknown) => typeof q === 'string' && q.length > 0)
-                : [],
-            model: data.model || 'llama-3.3-70b-versatile'
-        };
-    } catch {
-        result = {
-            answer: fixMarkdownLineBreaks(rawContent),
-            verses: [],
-            keyTerms: [],
-            suggestedQuestions: [],
-            model: data.model || 'llama-3.3-70b-versatile'
-        };
-    }
-
-    if (conversationHistory.length === 0) {
-        setCachedResponse(userMessage, result);
-    }
-
-    return result;
+    // If all models fail
+    throw lastError || new Error("Todos os modelos de IA falharam. Tente novamente mais tarde.");
 }

@@ -70,7 +70,7 @@ export function AIChatPage() {
             const errorMsg: Message = {
                 id: (Date.now() + 1).toString(),
                 role: 'assistant',
-                content: 'Desculpe, tive um problema ao processar sua pergunta. Tente novamente.',
+                content: `Erro ao conectar com Nicodemos: ${error instanceof Error ? error.message : String(error)}. Verifique a chave API do Groq.`,
                 timestamp: new Date()
             };
             setMessages(prev => [...prev, errorMsg]);
