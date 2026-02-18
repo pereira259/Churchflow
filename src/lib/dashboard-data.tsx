@@ -38,6 +38,36 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
     const [churchSettings, setChurchSettings] = useState<any>(null);
     const [isLoading, setIsLoading] = useState(true);
 
+    // --- OPTIMISTIC HYDRATION ---
+    // Try to find ANY cached data in localStorage to show immediately
+    // even before auth is confirmed. This creates the "Instant App" feel.
+    useEffect(() => {
+        const tryOptimisticHydration = async () => {
+            // We don't know the exact church ID yet, but we can look for the last used key
+            // or iterate keys. For simplicity, if we have a stored profile in cache, prompt from there.
+            try {
+                // Try to find a cache key pattern
+                const keys = Object.keys(localStorage);
+                const dashboardKey = keys.find(k => k.startsWith('dashboard-data-v5-'));
+
+                if (dashboardKey) {
+                    const cached = await getCachedFull<CachedDashboardData>(dashboardKey);
+                    if (cached) {
+                        console.log('[DASHBOARD] ⚡ Optimistic Hydration from:', dashboardKey);
+                        if (cached.events?.length > 0) setEvents(cached.events);
+                        if (cached.news?.length > 0) setNews(cached.news);
+                        if (cached.churchSettings) setChurchSettings(cached.churchSettings);
+                        setIsLoading(false); // Show UI immediately!
+                    }
+                }
+            } catch (e) {
+                // Ignore errors in optimistic attempt
+            }
+        };
+
+        tryOptimisticHydration();
+    }, []); // Run ONCE on mount
+
     const fetchAllData = useCallback(async (silent = false) => {
         if (authLoading) return;
 
