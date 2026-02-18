@@ -149,6 +149,9 @@ function EventCarouselCard({ events, registrations, isLoading }: any) {
                                     src={nextEvent.image_url}
                                     alt={nextEvent.title}
                                     className="w-full h-full object-cover"
+                                    loading="eager"
+                                    // @ts-ignore
+                                    fetchpriority="high"
                                 />
                             ) : (
                                 <div className="w-full h-full flex flex-col items-center justify-center bg-white/5">
@@ -222,6 +225,9 @@ function EventCarouselCard({ events, registrations, isLoading }: any) {
                                                 src={carouselEvents[currentIndex].image_url}
                                                 alt={carouselEvents[currentIndex].title}
                                                 className="w-full h-full object-cover"
+                                                loading="eager"
+                                                // @ts-ignore
+                                                fetchpriority="high"
                                             />
                                         ) : (
                                             <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
