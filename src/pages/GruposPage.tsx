@@ -165,19 +165,35 @@ export function GruposPage() {
                     let lat = data.latitude || -23.5505;
                     let lng = data.longitude || -46.6333;
 
-                    // Se as coordenadas não existem ou são o centro padrão de SP, tenta geocodificar o CEP
+                    // Se as coordenadas não existem ou são o centro padrão de SP, tenta geocodificar o CEP com precisão
                     const isDefaultCoords = (Math.abs(lat - (-23.5505)) < 0.001 && Math.abs(lng - (-46.6333)) < 0.001);
 
-                    if (data.cep) {
+                    if (data.cep && isDefaultCoords) {
                         try {
                             const cepClean = data.cep.replace(/\D/g, '');
-                            if (cepClean.length === 8 && isDefaultCoords) {
-                                // Usa 'q=' que é mais flexível que 'postalcode=' no Nominatim
-                                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${cepClean}&country=Brazil`);
-                                const results = await res.json();
-                                if (results && results.length > 0) {
-                                    lat = parseFloat(results[0].lat);
-                                    lng = parseFloat(results[0].lon);
+                            if (cepClean.length === 8) {
+                                // 1. Buscar dados do endereço no Viacep (mais confiável para CEPs br)
+                                const viaCepRes = await fetch(`https://viacep.com.br/ws/${cepClean}/json/`);
+                                const viaCepData = await viaCepRes.json();
+
+                                if (!viaCepData.erro) {
+                                    // 2. Com o endereço estruturado, buscar coordenadas no Nominatim
+                                    const queryAddr = `${viaCepData.logradouro}, ${viaCepData.bairro}, ${viaCepData.localidade} - ${viaCepData.uf}, Brasil`;
+                                    const nomRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(queryAddr)}&limit=1`);
+                                    const nomData = await nomRes.json();
+
+                                    if (nomData && nomData.length > 0) {
+                                        lat = parseFloat(nomData[0].lat);
+                                        lng = parseFloat(nomData[0].lon);
+                                    }
+                                } else {
+                                    // Fallback: Tenta só o CEP no Nominatim se Viacep falhar
+                                    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${cepClean}&country=Brazil&limit=1`);
+                                    const results = await res.json();
+                                    if (results && results.length > 0) {
+                                        lat = parseFloat(results[0].lat);
+                                        lng = parseFloat(results[0].lon);
+                                    }
                                 }
                             }
                         } catch (e) {
