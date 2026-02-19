@@ -932,42 +932,36 @@ export function FinanceiroPage() {
                                                     )}
                                                 </div>
                                                 <AnimatePresence>
-                                                    {isMemberDropdownOpen && memberSearchTerm && !selectedMemberId && (
+                                                    {isMemberDropdownOpen && memberSearchTerm && !selectedMemberId && members.filter(m => m.full_name?.toLowerCase().includes(memberSearchTerm.toLowerCase())).length > 0 && (
                                                         <motion.div
                                                             initial={{ opacity: 0, y: 5 }}
                                                             animate={{ opacity: 1, y: 0 }}
                                                             exit={{ opacity: 0, y: 5 }}
                                                             className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-100 rounded-xl shadow-xl z-50 max-h-48 overflow-y-auto"
                                                         >
-                                                            {members.filter(m => m.full_name?.toLowerCase().includes(memberSearchTerm.toLowerCase())).length > 0 ? (
-                                                                members
-                                                                    .filter(m => m.full_name?.toLowerCase().includes(memberSearchTerm.toLowerCase()))
-                                                                    .slice(0, 5)
-                                                                    .map(member => (
-                                                                        <div
-                                                                            key={member.id}
-                                                                            onClick={() => {
-                                                                                setSelectedMemberId(member.id);
-                                                                                setMemberSearchTerm(member.full_name);
-                                                                                setIsMemberDropdownOpen(false);
-                                                                            }}
-                                                                            className="px-3 py-2 hover:bg-slate-50 cursor-pointer flex items-center gap-2"
-                                                                        >
-                                                                            <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-500 overflow-hidden">
-                                                                                {member.photo_url ? <img src={member.photo_url} alt="" className="w-full h-full object-cover" /> : member.full_name.charAt(0)}
-                                                                            </div>
-                                                                            <div>
-                                                                                <p className="text-[10px] font-bold text-marinho">{member.full_name}</p>
-                                                                                <p className="text-[8px] text-slate-400">{member.church_role || 'Membro'}</p>
-                                                                            </div>
+                                                            {members
+                                                                .filter(m => m.full_name?.toLowerCase().includes(memberSearchTerm.toLowerCase()))
+                                                                .slice(0, 5)
+                                                                .map(member => (
+                                                                    <div
+                                                                        key={member.id}
+                                                                        onClick={() => {
+                                                                            setSelectedMemberId(member.id);
+                                                                            setMemberSearchTerm(member.full_name);
+                                                                            setIsMemberDropdownOpen(false);
+                                                                        }}
+                                                                        className="px-3 py-2 hover:bg-slate-50 cursor-pointer flex items-center gap-2"
+                                                                    >
+                                                                        <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-500 overflow-hidden">
+                                                                            {member.photo_url ? <img src={member.photo_url} alt="" className="w-full h-full object-cover" /> : member.full_name.charAt(0)}
                                                                         </div>
-                                                                    ))
-                                                            ) : (
-                                                                <div className="p-3 text-center">
-                                                                    <p className="text-[9px] text-slate-400">Nenhum membro encontrado.</p>
-                                                                    <p className="text-[8px] text-marinho/50 mt-0.5">O nome digitado será salvo como visitante/externo.</p>
-                                                                </div>
-                                                            )}
+                                                                        <div>
+                                                                            <p className="text-[10px] font-bold text-marinho">{member.full_name}</p>
+                                                                            <p className="text-[8px] text-slate-400">{member.church_role || 'Membro'}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                ))
+                                                            }
                                                         </motion.div>
                                                     )}
                                                 </AnimatePresence>

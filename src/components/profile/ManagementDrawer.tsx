@@ -259,7 +259,6 @@ export function ManagementDrawer({
                         animate={{ x: 0, opacity: 1 }}
                         exit={{ x: '100%', opacity: 0.5 }}
                         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
                         className="fixed top-20 right-6 bottom-auto max-h-[calc(100vh-6rem)] w-full max-w-sm bg-white/95 backdrop-blur-2xl z-[9999] rounded-[2.5rem] shadow-[-20px_0_50px_rgba(15,23,42,0.1)] border border-white/40 overflow-hidden flex flex-col"
                     >
                         {/* Header */}
