@@ -216,6 +216,7 @@ export function DashboardPage() {
                 const { data: vData } = await supabase
                     .from('members')
                     .select('full_name, phone, created_at')
+                    .eq('church_id', churchId)
                     .eq('status', 'visitante')
                     .order('created_at', { ascending: false })
                     .limit(5);
@@ -229,7 +230,10 @@ export function DashboardPage() {
                 }
 
                 // Finance
-                const { data: tData } = await supabase.from('transactions').select('amount');
+                const { data: tData } = await supabase
+                    .from('transactions')
+                    .select('amount')
+                    .eq('church_id', churchId);
                 if (tData) {
                     const total = tData.reduce((acc: number, curr: any) => acc + (curr.amount || 0), 0);
                     setMonthlyGiving(total);
