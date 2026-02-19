@@ -254,7 +254,30 @@
 
 /* Tutorial Spotlight Animation */
 .driver-active-element {
-  box-shadow: 0 0 0 4px #d4af37, 0 0 0 5000px rgba(0, 0, 0, 0.8) !important;
   border-radius: 1rem;
   transition: all 0.3s ease;
+}
+
+@keyframes floatA {
+
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  50% {
+    transform: translate(20px, -20px);
+  }
+}
+
+@keyframes floatB {
+
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  50% {
+    transform: translate(-15px, 15px);
+  }
 }

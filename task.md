@@ -39,3 +39,16 @@
         - [x] Secure Storage Buckets (Avatars/Uploads) <!-- id: 22 -->
         - [x] Configure Security Headers (CSP, HSTS) <!-- id: 23 -->
         - [ ] Enable MFA Support (Policy/UI) <!-- id: 24 -->
+- [x] **Frontend Security Audit (Deep Scan)** <!-- id: 25 -->
+    - [x] Static Analysis (XSS, Secrets, Injection) <!-- id: 26 -->
+    - [x] Dependency Review <!-- id: 27 -->
+    - [x] Auth & Storage Analysis <!-- id: 28 -->
+    - [x] Generate Vulnerability Report <!-- id: 29 -->
+- [x] **Refactor Super Admin & Cleanup PII** <!-- id: 30 -->
+    - [x] Migration: Promote specific user to super_admin <!-- id: 31 -->
+    - [x] Frontend: Use role-based check in SuperAdminPage <!-- id: 32 -->
+    - [x] Frontend: Remove PII logs from SuperAdminPage & LoginPage <!-- id: 33 -->
+- [x] **Emergency Crash Recovery** <!-- id: 34 -->
+    - [x] Fix "White Screen" (MemberProfilePage + auth.tsx) <!-- id: 35 -->
+    - [x] Restore Super Admin Permission <!-- id: 36 -->
+    - [x] Remove PII from SelectChurchPage <!-- id: 37 -->

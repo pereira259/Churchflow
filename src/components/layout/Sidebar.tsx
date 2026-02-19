@@ -108,7 +108,7 @@ export function Sidebar() {
       .filter(item => {
         // PERMISSÃO POR CARGO
         const effectiveRole = (currentRole as UserRole) || 'membro';
-        if (!item.roles.includes(effectiveRole)) return false;
+        if (effectiveRole !== 'super_admin' && !item.roles.includes(effectiveRole)) return false;
 
         // ITENS QUE SEMPRE APARECEM (independente de igreja)
         const alwaysVisible = ['/membro', '/perfil', '/biblia', '/grupos', '/membro/agenda'];

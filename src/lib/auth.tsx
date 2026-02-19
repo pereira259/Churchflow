@@ -1,8 +1,9 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { User, Session, AuthChangeEvent } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 import { Navigate } from 'react-router-dom';
-import { setCached, clearAllCaches } from './cache-manager';
+import { setCached, getCached, clearAllCaches } from './cache-manager';
+import { logSecurityEvent } from './logger';
 
 // Tipos de cargo/role conforme PRD 1.2
 export type UserRole = 'super_admin' | 'pastor_chefe' | 'pastor_lider' | 'admin' | 'financeiro' | 'voluntario' | 'lider' | 'membro' | 'visitante';
@@ -40,6 +41,13 @@ interface AuthContextType {
     isMembro: boolean;
     hasPermission: (requiredRoles: UserRole[]) => boolean;
     refreshProfile: () => Promise<void>;
+    mfa: {
+        enroll: () => Promise<{ data: any; error: Error | null }>;
+        verify: (factorId: string, code: string, challengeId?: string) => Promise<{ data: any; error: Error | null }>;
+        check: () => Promise<boolean>;
+        list: () => Promise<{ data: any[]; error: Error | null }>;
+        unenroll: (factorId: string) => Promise<{ error: Error | null }>;
+    };
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -58,8 +66,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!supabase) return null;
 
         try {
-            console.log('[AUTH] Fetching profile for:', userId);
-            // const startTime = Date.now(); // Removed unused
+            // 1. Tentar Cache Imediato (Stale-while-revalidate)
+            const cached = getCached<UserProfile>(`auth_profile_${userId}`);
+            if (cached) {
+                console.log('[AUTH] ⚡ Cache hit for profile');
+                // Se já temos cache, setamos o perfil imediatamente para desbloquear a UI
+                setProfile(cached);
+                setLoading(false); // Libera o loading imediatamente
+            }
+
+            console.log('[AUTH] Fetching fresh profile for:', userId);
 
             const { data, error } = await supabase
                 .from('users')
@@ -73,19 +89,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
 
             // AUTO-FIX: Corrige role 'member' (inglês) para 'membro' (português)
-            // Bug anterior definia role errado ao excluir igrejas
             if (data.role === 'member') {
                 console.warn('[AUTH] 🔧 Auto-fixing role typo: member -> membro');
                 data.role = 'membro';
                 await supabase.from('users').update({ role: 'membro' }).eq('id', userId);
             }
 
-            // Cache com chave específica do usuário para evitar cache cross-user
+            // Atualiza Cache e Estado
             setCached(`auth_profile_${userId}`, data, 3600000); // 1 hora
             return data as UserProfile;
+
         } catch (err) {
             console.error('[AUTH] Profile fetch failed:', err);
-            return null;
+            // Se falhar e tiver cache, retornamos o cache como fallback seguro
+            // Precisamos chamar getCached novamente aqui se quisermos fallback, 
+            // ou podemos ter salvo o cached em uma variavel fora.
+            // Simplificando: tenta ler do cache de novo se der erro
+            const fallback = getCached<UserProfile>(`auth_profile_${userId}`);
+            return fallback || null;
         }
     };
 
@@ -107,21 +128,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log('[AUTH] 🆕 PERFIL NÃO EXISTE - Criando novo...');
 
         try {
-            console.log('[AUTH] Creating new profile for:', email);
-            // 2. Determina cargo baseado no email (apenas para auto-geração)
+            // 2. Determina cargo (todos começam como 'membro' ou 'visitante' por padrão)
+            // A promoção deve ser feita via Banco de Dados ou Interface Administrativa
             let intendedRole: UserRole = 'membro';
-            const emailLower = email.toLowerCase();
-
-            // Bypass especial para admins conhecidos
-            if (emailLower === 'dp6274720@gmail.com' || emailLower === 'admin.oficial@churchflow.com') {
-                intendedRole = 'admin';
-            } else if (emailLower.includes('admin')) {
-                intendedRole = 'admin';
-            } else if (emailLower.includes('pastor')) {
-                intendedRole = 'pastor_chefe';
-            } else if (emailLower.includes('lider')) {
-                intendedRole = 'lider';
-            }
 
             const newProfile: Omit<UserProfile, 'created_at'> = {
                 id: userId,
@@ -159,7 +168,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     // Refresh do perfil
-    const refreshProfile = async () => {
+    const refreshProfile = useCallback(async () => {
         let currentUserId = user?.id;
 
         if (!currentUserId) {
@@ -171,7 +180,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const userProfile = await fetchProfile(currentUserId);
             if (userProfile) setProfile(userProfile);
         }
-    };
+    }, [user?.id]);
 
     // Inicializa a sessão
     useEffect(() => {
@@ -195,6 +204,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Verifica sessão existente na inicialização
         const initSession = async () => {
             try {
+                // 1. Processa hash OAuth do Google manualmente se presente (Fix para loop infinito/tela branca)
+                const hashParams = new URLSearchParams(
+                    window.location.hash.replace('#', '?')
+                );
+                const accessToken = hashParams.get('access_token');
+                const refreshToken = hashParams.get('refresh_token');
+
+                if (accessToken && refreshToken) {
+                    console.log('[AUTH] Manually processing OAuth hash tokens...');
+                    try {
+                        const { error } = await supabase.auth.setSession({
+                            access_token: accessToken,
+                            refresh_token: refreshToken,
+                        });
+                        if (error) throw error;
+                        // Limpa o hash da URL imediatamente
+                        window.history.replaceState(null, '', window.location.pathname);
+                        console.log('[AUTH] Session set successfully from hash');
+                    } catch (err) {
+                        console.error('[AUTH] Failed to set session from hash:', err);
+                        window.history.replaceState(null, '', '/login');
+                    }
+                } else if (window.location.hash.includes('access_token=')) {
+                    // Fallback: Tenta detectar sessão da URL automaticamente se o manual falhar ou for parcial
+                    await supabase.auth.getSession();
+                }
+
                 console.log('[AUTH] Initializing session check...');
                 const { data: { session }, error } = await supabase.auth.getSession();
 
@@ -251,12 +287,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setSession(session);
             setUser(session?.user ?? null);
             if (session?.user) {
+                // Timeout de segurança: libera a UI em no máximo 5s
+                const safetyTimeout = setTimeout(() => {
+                    if (isMounted) {
+                        console.warn('[AUTH] Safety timeout triggered, forcing loading=false');
+                        setLoading(false);
+                    }
+                }, 5000);
+
                 // Se temos usuário, sincroniza o perfil
                 createProfileIfNotExists(
                     session.user.id,
                     session.user.email || '',
                     session.user.user_metadata?.full_name
                 ).then(async userProfile => {
+                    clearTimeout(safetyTimeout);
                     if (isMounted) {
                         // SELF-HEALING: Sync Metadata if missing/generic in profile
                         if (userProfile && session.user.user_metadata) {
@@ -291,6 +336,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         }
                         setLoading(false);
                     }
+                }).catch(err => {
+                    clearTimeout(safetyTimeout);
+                    console.error('[AUTH] createProfileIfNotExists failed:', err);
+                    if (isMounted) setLoading(false); // libera mesmo com erro
                 });
             } else {
                 setLoading(false);
@@ -345,6 +394,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             password,
         });
 
+        if (!error && data.user) {
+            logSecurityEvent('LOGIN', 'USER', data.user.id, { method: 'password' });
+        } else if (error) {
+            console.warn('[AUTH] Login failed for:', email);
+        }
+
         return { data, error };
     };
 
@@ -365,6 +420,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
 
         if (error) return { data, error };
+
+        if (data.user) {
+            logSecurityEvent('SIGNUP', 'USER', data.user.id, { email });
+        }
 
         // Se o usuário foi criado e já está confirmado (ex: desablitar confirm email)
         // Opcional: criar perfil já aqui se quisesse
@@ -410,6 +469,57 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { error };
     };
 
+    // MFA: Enrollment (TOTP)
+    const enrollMFA = async () => {
+        if (!supabase) return { error: new Error('Supabase não configurado') };
+        return await supabase.auth.mfa.enroll({ factorType: 'totp' });
+    };
+
+    // MFA: Challenge & Verify
+    const verifyMFA = async (factorId: string, code: string, challengeId?: string) => {
+        if (!supabase) return { error: new Error('Supabase não configurado') };
+
+        // Se não tiver challengeId, cria um novo
+        if (!challengeId) {
+            const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({ factorId });
+            if (challengeError) return { error: challengeError };
+            challengeId = challengeData.id;
+        }
+
+        const { data, error } = await supabase.auth.mfa.verify({
+            factorId,
+            challengeId,
+            code,
+        });
+
+        if (data && !error) {
+            await refreshProfile(); // Atualiza perfil/sessão se necessário
+        }
+
+        return { data, error };
+    };
+
+    // MFA: Check Level
+    const checkMFA = async () => {
+        if (!supabase) return false;
+        const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+        if (error || !data) return false;
+        return data.currentLevel === 'aal2';
+    };
+
+    // MFA: List Factors
+    const listMFAFactors = async () => {
+        if (!supabase) return { data: [], error: new Error('Supabase não configurado') };
+        const { data, error } = await supabase.auth.mfa.listFactors();
+        return { data: data?.all || [], error };
+    };
+
+    // MFA: Unenroll
+    const unenrollMFA = async (factorId: string) => {
+        if (!supabase) return { error: new Error('Supabase não configurado') };
+        return await supabase.auth.mfa.unenroll({ factorId });
+    };
+
     // Helpers de permissão (baseados no profile real)
     const role = profile?.role;
     const isAdmin = role === 'admin' || role === 'super_admin';
@@ -420,6 +530,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const hasPermission = (requiredRoles: UserRole[]) => {
         if (!profile) return false;
+        if (profile.role === 'super_admin') return true;
         return requiredRoles.includes(profile.role);
     };
 
@@ -440,6 +551,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isMembro,
         hasPermission,
         refreshProfile,
+        mfa: {
+            enroll: enrollMFA,
+            verify: verifyMFA,
+            check: checkMFA,
+            list: listMFAFactors,
+            unenroll: unenrollMFA
+        }
     };
 
     return (
@@ -521,10 +639,11 @@ export function getRedirectPath(role?: UserRole): string {
     if (!role) return '/membro';
 
     switch (role) {
+        case 'super_admin':
         case 'admin':
         case 'pastor_chefe':
         case 'pastor_lider':
-            return '/membros'; // Redireciona para área de membros, pois não tem mais acesso ao dashboard
+            return '/jornal'; // Painel principal de notícias/avisos
         case 'lider':
             return '/lider/comunicacao'; // Rota mais comum para líderes
         case 'financeiro':

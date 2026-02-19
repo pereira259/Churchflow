@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../lib/auth';
 import { useNavigate } from 'react-router-dom';
@@ -35,16 +35,18 @@ interface Toast {
 }
 
 export function SuperAdminPage() {
-    const { user } = useAuth();
+    const { user, profile, loading: authLoading, refreshProfile } = useAuth();
     const navigate = useNavigate();
     const [users, setUsers] = useState<UserData[]>([]);
     const [pendingChurches, setPendingChurches] = useState<PendingChurch[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [dataLoading, setDataLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [activeTab, setActiveTab] = useState<'users' | 'churches' | 'all_churches'>('churches');
     const [allChurches, setAllChurches] = useState<any[]>([]);
     const [processingId, setProcessingId] = useState<string | null>(null);
     const [toast, setToast] = useState<Toast | null>(null);
+    const hasRefreshedProfile = useRef(false);
+
     const [confirmModal, setConfirmModal] = useState<{
         isOpen: boolean;
         title: string;
@@ -59,25 +61,70 @@ export function SuperAdminPage() {
         onConfirm: () => { },
     });
 
-    const SUPER_ADMIN_EMAIL = 'dp6274720@gmail.com';
-
-    // Show toast notification
     const showToast = (type: 'success' | 'error', message: string) => {
         setToast({ type, message });
-        setTimeout(() => setToast(null), 4000);
+        setTimeout(() => setToast(null), 3000);
     };
 
+    const fetchedRef = useRef(false);
+
     useEffect(() => {
-        if (!user) return;
-        if (user.email !== SUPER_ADMIN_EMAIL) {
+        if (authLoading) return;
+
+        if (!user) {
             navigate('/');
             return;
         }
-        fetchData();
-    }, [user]);
+
+        // Security logic is now handled in render to enable debug screen
+        if (profile?.role === 'super_admin') {
+            // Avoid double fetch on strict mode or re-renders
+            if (!fetchedRef.current) {
+                fetchedRef.current = true;
+                fetchData();
+            }
+        } else if (!hasRefreshedProfile.current) {
+            console.log('Tentando atualizar perfil para confirmar permissão...');
+            hasRefreshedProfile.current = true;
+            refreshProfile();
+        }
+    }, [user, profile?.role, authLoading, navigate, refreshProfile]);
+
+    // Debug/Access Denied Screen
+    if (!authLoading && user && profile?.role !== 'super_admin') {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-[#1e1b4b] text-white p-8">
+                <div className="max-w-md w-full bg-white/10 backdrop-blur-xl rounded-3xl p-8 border border-white/10 text-center">
+                    <Shield className="w-16 h-16 text-red-500 mx-auto mb-4" />
+                    <h1 className="text-2xl font-bold mb-2">Acesso Negado</h1>
+                    <p className="text-slate-300 mb-6">
+                        Você não tem permissão de Super Admin.
+                    </p>
+                    <div className="bg-black/30 p-4 rounded-xl text-left text-xs font-mono mb-6 space-y-2 overflow-auto">
+                        <div><span className="text-slate-500">ID:</span> {user.id}</div>
+                        <div><span className="text-slate-500">Email:</span> {user.email}</div>
+                        <div><span className="text-slate-500">Role Atual:</span> <span className="text-yellow-400 font-bold">{profile?.role || 'N/A'}</span></div>
+                        <div><span className="text-slate-500">Tentou Refresh:</span> {hasRefreshedProfile.current ? 'Sim' : 'Não'}</div>
+                    </div>
+                    <button
+                        onClick={() => refreshProfile()}
+                        className="w-full py-3 bg-[#d4af37] text-[#1e1b4b] font-bold rounded-xl hover:bg-[#d4af37]/90 transition-all mb-3"
+                    >
+                        Tentar Atualizar Permissões
+                    </button>
+                    <button
+                        onClick={() => navigate('/perfil')}
+                        className="w-full py-3 bg-white/5 text-white font-bold rounded-xl hover:bg-white/10 transition-all"
+                    >
+                        Voltar ao App
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     const fetchData = async () => {
-        setLoading(true);
+        setDataLoading(true);
         try {
             // Fetch Users
             const { data: usersData, error: usersError } = await supabase
@@ -105,12 +152,9 @@ export function SuperAdminPage() {
             setAllChurches(allChurchesData || []);
 
             if (churchesError) {
-                console.error('❌ Erro ao buscar igrejas pendentes:', churchesError);
+                console.error('Error fetching pending churches');
                 throw churchesError;
             }
-
-            console.log('✅ Igrejas pendentes encontradas:', churchesData?.length || 0);
-            console.log('📋 Dados:', churchesData);
 
             // Fetch user emails separately for each church
             const churchesWithUsers = await Promise.all(
@@ -131,9 +175,9 @@ export function SuperAdminPage() {
             setPendingChurches(churchesWithUsers);
 
         } catch (err) {
-            console.error('Erro ao buscar dados:', err);
+            console.error('Error fetching data'); // Clean log
         } finally {
-            setLoading(false);
+            setDataLoading(false);
         }
     };
 
@@ -157,8 +201,6 @@ export function SuperAdminPage() {
     const handleApprove = async (churchId: string, requestedBy: string) => {
         setProcessingId(churchId);
         try {
-            console.log('🔵 Iniciando aprovação...', { churchId, requestedBy });
-
             // Get church data first (has user email already)
             const church = pendingChurches.find(c => c.id === churchId);
             if (!church) {
@@ -166,10 +208,8 @@ export function SuperAdminPage() {
             }
 
             const userEmail = church.users?.email || church.email;
-            console.log('📧 Email do pastor:', userEmail);
 
             // 1. Update church status to active
-            console.log('1️⃣ Atualizando status da igreja...');
             const { error: churchError } = await supabase
                 .from('churches')
                 .update({
@@ -180,29 +220,25 @@ export function SuperAdminPage() {
                 .eq('id', churchId);
 
             if (churchError) {
-                console.error('❌ Erro ao atualizar igreja:', churchError);
                 throw churchError;
             }
-            console.log('✅ Igreja atualizada para active');
 
             // VERIFICAÇÃO: Ler igreja após update para confirmar
-            const { data: verifyChurch, error: _verifyError } = await supabase
+            const { data: verifyChurch } = await supabase
                 .from('churches')
                 .select('id, name, status')
                 .eq('id', churchId)
                 .single();
 
-            console.log('🔍 Verificação após UPDATE:', verifyChurch);
 
             if (verifyChurch?.status !== 'active') {
-                console.error('⚠️ AVISO: Igreja ainda não está "active" no banco!', verifyChurch);
+                console.error('Warning: Church status mismatch after update');
             }
 
             // OTIMIZAÇÃO: Remover da lista localmente enquanto aguarda refresh
             setPendingChurches(prev => prev.filter(c => c.id !== churchId));
 
             // 2. Update user to admin role
-            console.log('2️⃣ Promovendo usuário para admin...');
             const { error: userError } = await supabase
                 .from('users')
                 .update({
@@ -212,13 +248,9 @@ export function SuperAdminPage() {
                 .eq('id', requestedBy);
 
             if (userError) {
-                console.error('❌ Erro ao atualizar usuário:', userError);
                 throw userError;
             }
-            console.log('✅ Usuário promovido para admin');
-
             // 3. Create member record (pastor as admin)
-            console.log('3️⃣ Criando registro de membro...');
             const { error: memberError } = await supabase
                 .from('members')
                 .insert({
@@ -231,21 +263,16 @@ export function SuperAdminPage() {
                 });
 
             if (memberError) {
-                console.warn('⚠️ Erro ao criar membro (pode já existir):', memberError);
-                // Não falha - membro pode já existir
-            } else {
-                console.log('✅ Membro criado');
+                // Member might already exist, safe to ignore based on business rules
             }
 
             // Refresh data
-            console.log('4️⃣ Recarregando dados...');
             await fetchData();
-            console.log('✅ Dados recarregados!');
 
             showToast('success', '✅ Igreja aprovada! O pastor agora tem acesso admin.');
 
         } catch (err: any) {
-            console.error('❌ ERRO GERAL:', err);
+            console.error('Error in approval process');
             showToast('error', '❌ Erro ao aprovar: ' + err.message);
         } finally {
             setProcessingId(null);
@@ -413,7 +440,7 @@ export function SuperAdminPage() {
         (c.city || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    if (loading) {
+    if (authLoading || (dataLoading && !users.length && !allChurches.length)) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-[#1e1b4b]">
                 <Loader2 className="w-8 h-8 text-[#d4af37] animate-spin" />
@@ -445,7 +472,7 @@ export function SuperAdminPage() {
                     </div>
 
                     <button
-                        onClick={() => navigate('/dashboard')}
+                        onClick={() => navigate('/perfil')}
                         className="px-6 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all flex items-center gap-2 text-sm font-medium"
                     >
                         <ArrowLeft className="w-4 h-4" /> Voltar ao App

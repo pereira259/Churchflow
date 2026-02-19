@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import { AuthProvider, ProtectedRoute, useAuth, getRedirectPath } from './lib/auth';
 import { DashboardDataProvider } from './lib/dashboard-data';
 import { TutorialProvider } from './contexts/TutorialContext';
@@ -7,7 +8,7 @@ import { JornalContent } from './components/JornalContent';
 import { ProfileGate } from './components/ProfileGate';
 
 // Pages - Auth
-import { LoginPage } from './pages/LoginPage';
+import { SwapAuthPage } from './pages/auth/SwapAuthPage';
 import { SelectChurchPage } from './pages/SelectChurchPage';
 import { CreateChurchPage } from './pages/CreateChurchPage';
 import { SuperAdminPage } from './pages/SuperAdminPage';
@@ -47,28 +48,33 @@ function RootRedirect() {
     const { user, profile, loading } = useAuth();
     const hasHash = window.location.hash.includes('access_token=');
 
-    // Se temos um token na URL, NÃO redirecionamos.
-    // Deixamos o App parado (null) até que o Supabase converta o hash em sessão.
-    if (hasHash) {
-        console.log('[ROOT] Auth hash detected, holding redirect...');
-        return null;
+    if (hasHash || loading) {
+        return (
+            <div style={{
+                minHeight: '100vh',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: '#f8fafc',
+                gap: 16
+            }}>
+                <div style={{
+                    width: 40, height: 40, borderRadius: '50%',
+                    border: '3px solid #e2e8f0',
+                    borderTop: '3px solid #6366f1',
+                    animation: 'spin 0.8s linear infinite'
+                }} />
+                <p style={{ color: '#94a3b8', fontSize: 14 }}>
+                    Autenticando com Google...
+                </p>
+                <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+            </div>
+        );
     }
 
-    // Enquanto está carregando o estado inicial, não faz nada
-    if (loading) return null;
-
-    // Se não está logado, vai para o login
-    if (!user) {
-        return <Navigate to="/login" replace />;
-    }
-
-    // Se já temos o perfil, vamos para a rota correta
-    if (profile) {
-        const path = getRedirectPath(profile.role);
-        return <Navigate to={path} replace />;
-    }
-
-    // Se temos usuário mas ainda sem perfil (carregando), esperamos
+    if (!user) return <Navigate to="/login" replace />;
+    if (profile) return <Navigate to={getRedirectPath(profile.role)} replace />;
     return null;
 }
 
@@ -80,7 +86,7 @@ export default function App() {
                     <TutorialProvider>
                         <Routes>
                             {/* Auth - Público */}
-                            <Route path="/login" element={<LoginPage />} />
+                            <Route path="/login" element={<SwapAuthPage />} />
                             <Route path="/entrar-na-igreja" element={<SelectChurchPage />} />
                             <Route path="/criar-igreja" element={<CreateChurchPage />} />
                             <Route path="/super-admin" element={<SuperAdminPage />} />
@@ -168,7 +174,9 @@ export default function App() {
 
                             <Route path="/perfil" element={
                                 <ProtectedRoute>
-                                    <MemberProfilePage />
+                                    <DashboardLayout>
+                                        <MemberProfilePage />
+                                    </DashboardLayout>
                                 </ProtectedRoute>
                             } />
 
@@ -190,7 +198,9 @@ export default function App() {
                             } />
                             <Route path="/membro/perfil" element={
                                 <ProtectedRoute>
-                                    <MemberProfilePage />
+                                    <DashboardLayout>
+                                        <MemberProfilePage />
+                                    </DashboardLayout>
                                 </ProtectedRoute>
                             } />
                             <Route path="/membro/checkin" element={

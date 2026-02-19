@@ -107,13 +107,7 @@ export function MemberProfilePage() {
     const fetchData = async () => {
         if (!supabase || !profile) return;
 
-        // EMERGENCY RESTORE FOR ADMIN (Fix for previous bug)
-        if (profile.email === 'dp6274720@gmail.com' && profile.role !== 'admin') {
-            await supabase.from('users').update({ role: 'admin' }).eq('id', profile.id);
-            await refreshProfile();
-            window.location.reload();
-            return;
-        }
+        // Legacy admin restore removed to prevent super_admin conflicts
 
         try {
             // Fetch member info
@@ -354,7 +348,74 @@ export function MemberProfilePage() {
         navigate('/login');
     };
 
-    if (!profile) return null;
+    if (loading || useAuth().loading) {
+        return (
+            <MemberLayout>
+                <div className="h-full flex flex-col overflow-hidden animate-pulse">
+                    {/* Banner Skeleton */}
+                    <div className="relative h-24 md:h-28 rounded-b-[2rem] bg-slate-200 shrink-0" />
+
+                    {/* Main Content Hub */}
+                    <div className="w-full max-w-[1240px] mx-auto px-4 -mt-20 relative z-10 flex-1 min-h-0 pb-1">
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-start h-full">
+                            {/* Left Column Skeleton */}
+                            <div className="lg:col-span-4 flex flex-col gap-4">
+                                <div className="bg-white rounded-[2rem] p-6 flex flex-col items-center">
+                                    <div className="w-28 h-28 rounded-full bg-slate-200 mb-4 border-4 border-white" />
+                                    <div className="w-32 h-6 bg-slate-200 rounded-full mb-2" />
+                                    <div className="w-20 h-4 bg-slate-200 rounded-full mb-6" />
+                                    <div className="w-full grid grid-cols-2 gap-4 border-t border-slate-100 py-4">
+                                        <div className="h-10 bg-slate-100 rounded-xl" />
+                                        <div className="h-10 bg-slate-100 rounded-xl" />
+                                    </div>
+                                    <div className="w-full h-12 bg-slate-200 rounded-xl mt-4" />
+                                </div>
+                            </div>
+
+                            {/* Right Column Skeleton */}
+                            <div className="lg:col-span-8 flex flex-col gap-5">
+                                <div className="h-32 bg-slate-200 rounded-[2rem] w-full" />
+                                <div className="h-64 bg-white rounded-[2rem] p-6 border border-slate-100" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </MemberLayout>
+        );
+    }
+
+    if (!profile) {
+        return (
+            <div className="flex flex-col items-center justify-center h-screen bg-slate-50 p-4">
+                <div className="bg-white p-6 rounded-2xl shadow-xl max-w-md w-full text-center">
+                    <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <User className="w-8 h-8 text-red-500" />
+                    </div>
+                    <h2 className="text-xl font-bold text-slate-800 mb-2">Erro de Perfil</h2>
+                    <p className="text-slate-500 text-sm mb-6">
+                        Não foi possível carregar seu perfil de usuário. Isso pode ocorrer devido a problemas de conexão ou permissões.
+                    </p>
+                    <div className="bg-slate-100 p-3 rounded-lg text-left text-xs font-mono text-slate-600 mb-6 overflow-auto max-h-32">
+                        <p>User ID: {useAuth().user?.id || 'N/A'}</p>
+                        <p>Loading: {loading ? 'True' : 'False'}</p>
+                        <p>Auth Loading: {useAuth().loading ? 'True' : 'False'}</p>
+                    </div>
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="w-full py-3 bg-[#1e1b4b] text-white rounded-xl font-bold uppercase tracking-wider hover:bg-[#2e2a5b] transition-colors"
+                    >
+                        Tentar Novamente
+                    </button>
+                    <button
+                        onClick={() => signOut()}
+                        className="w-full mt-3 py-3 text-slate-500 font-bold text-xs uppercase hover:text-red-500"
+                    >
+                        Sair e fazer login novamente
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     const getInitials = (name?: string) => {
         if (!name) return 'U';
@@ -367,6 +428,7 @@ export function MemberProfilePage() {
 
     const getRoleLabel = (role?: string) => {
         switch (role) {
+            case 'super_admin': return 'Super Admin';
             case 'admin': return 'Administrador';
             case 'pastor_chefe': return 'Pastor Chefe';
             case 'pastor_lider': return 'Pastor Líder';

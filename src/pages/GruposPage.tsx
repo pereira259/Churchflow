@@ -68,6 +68,42 @@ export function GruposPage() {
     const [showMapModal, setShowMapModal] = useState(false);
     const [tempCoords, setTempCoords] = useState<{ lat: number; lng: number } | null>(null);
 
+    // Location Search State
+    const [locationSearchTerm, setLocationSearchTerm] = useState('');
+    const [locationSearchResults, setLocationSearchResults] = useState<any[]>([]);
+    const [isSearchingLocation, setIsSearchingLocation] = useState(false);
+
+    const handleLocationSearch = async () => {
+        if (!locationSearchTerm || locationSearchTerm.length < 3) return;
+        setIsSearchingLocation(true);
+        try {
+            // Limited to Brazil for better relevance, looking for streets, neighborhoods, etc.
+            let viewboxParam = '';
+            if (churchInfo) {
+                // Bias search to ~50km around the church
+                const delta = 0.5;
+                const minLng = churchInfo.lng - delta;
+                const maxLng = churchInfo.lng + delta;
+                const minLat = churchInfo.lat - delta;
+                const maxLat = churchInfo.lat + delta;
+                // viewbox=<x1>,<y1>,<x2>,<y2> (left,top,right,bottom order is common but Nominatim is flexible with bounded=0)
+                // We use bounded=0 to prefer but not restrict
+                viewboxParam = `&viewbox=${minLng},${maxLat},${maxLng},${minLat}&bounded=0`;
+            }
+
+            const response = await fetch(
+                `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(locationSearchTerm)}&countrycodes=br&limit=5&addressdetails=1${viewboxParam}`
+            );
+            const data = await response.json();
+            setLocationSearchResults(data);
+        } catch (error) {
+            console.error("Erro na busca de local:", error);
+            showToast("Erro ao buscar localização", "error");
+        } finally {
+            setIsSearchingLocation(false);
+        }
+    };
+
     const [isSameAsChurch, setIsSameAsChurch] = useState(true);
 
     // Toast State
@@ -1151,10 +1187,78 @@ export function GruposPage() {
                 title="Selecionar Localização"
             >
                 <div className="space-y-4">
+                    {/* Search Bar for Map */}
+                    <div className="relative z-20">
+                        <div className="flex gap-2">
+                            <div className="relative flex-1">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                                <input
+                                    type="text"
+                                    placeholder="Buscar rua, bairro ou estabelecimento..."
+                                    value={locationSearchTerm}
+                                    onChange={(e) => setLocationSearchTerm(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleLocationSearch()}
+                                    className="w-full h-10 pl-10 pr-4 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-marinho/20 focus:border-marinho outline-none"
+                                />
+                            </div>
+                            <button
+                                onClick={handleLocationSearch}
+                                disabled={isSearchingLocation}
+                                className="px-4 h-10 bg-marinho text-white rounded-lg text-xs font-bold hover:bg-marinho/90 disabled:opacity-50"
+                            >
+                                {isSearchingLocation ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Buscar'}
+                            </button>
+                        </div>
+
+                        {/* Search Results Dropdown */}
+                        {locationSearchResults.length > 0 && (
+                            <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg shadow-xl border border-slate-100 max-h-60 overflow-y-auto z-50">
+                                {locationSearchResults.map((result, index) => (
+                                    <button
+                                        key={index}
+                                        onClick={() => {
+                                            const lat = parseFloat(result.lat);
+                                            const lng = parseFloat(result.lon);
+                                            setTempCoords({ lat, lng });
+
+                                            // Update Map View
+                                            const map = (window as any).selectionMap;
+                                            const marker = (window as any).selectionMarker;
+                                            const L = (window as any).L;
+
+                                            if (map && L) {
+                                                map.setView([lat, lng], 16);
+                                                if (marker) {
+                                                    marker.setLatLng([lat, lng]);
+                                                } else {
+                                                    const newMarker = L.marker([lat, lng]).addTo(map);
+                                                    (window as any).selectionMarker = newMarker;
+                                                }
+                                                // Trigger popup or visual feedback?
+                                            }
+
+                                            // Reset search
+                                            setLocationSearchResults([]);
+                                            setLocationSearchTerm(''); // Optional: keep term or clear? Clearing for clean view.
+                                        }}
+                                        className="w-full text-left p-3 hover:bg-slate-50 border-b border-slate-50 last:border-0 text-xs flex flex-col gap-0.5"
+                                    >
+                                        <span className="font-bold text-[#1e1b4b] truncate w-full block">
+                                            {result.name || result.address?.road || result.display_name.split(',')[0]}
+                                        </span>
+                                        <span className="text-slate-500 truncate w-full block text-[10px]">
+                                            {result.display_name}
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
                     <div className="h-[300px] w-full bg-slate-100 rounded-xl relative overflow-hidden border border-slate-200 shadow-inner">
                         <div id="selection-map" className="absolute inset-0 z-0" />
-                        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur px-4 py-2 rounded-full shadow-lg z-10 text-[10px] font-black text-marinho uppercase tracking-widest border border-marinho/10">
-                            Clique no mapa para marcar o local
+                        <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur px-4 py-2 rounded-full shadow-lg z-10 text-[10px] font-black text-marinho uppercase tracking-widest border border-marinho/10 pointer-events-none">
+                            Clique no mapa para ajustar
                         </div>
                     </div>
                 </div>
