@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+
 import { AuthProvider, ProtectedRoute, useAuth, getRedirectPath } from './lib/auth';
 import { DashboardDataProvider } from './lib/dashboard-data';
 import { TutorialProvider } from './contexts/TutorialContext';
@@ -78,160 +78,170 @@ function RootRedirect() {
     return null;
 }
 
+import { CustomCursor } from '@/components/CustomCursor';
+
+// ... (other imports)
+
 export default function App() {
+    // Detecta se é touch device — não mostra cursor em mobile
+    const isTouch = window.matchMedia('(pointer: coarse)').matches;
+
     return (
-        <AuthProvider>
-            <DashboardDataProvider>
-                <Router>
-                    <TutorialProvider>
-                        <Routes>
-                            {/* Auth - Público */}
-                            <Route path="/login" element={<SwapAuthPage />} />
-                            <Route path="/entrar-na-igreja" element={<SelectChurchPage />} />
-                            <Route path="/criar-igreja" element={<CreateChurchPage />} />
-                            <Route path="/super-admin" element={<SuperAdminPage />} />
-                            <Route path="/aguardando-aprovacao" element={<AwaitingApprovalPage />} />
-                            <Route path="/convite/:inviteId" element={<InviteLandingPage />} />
+        <>
+            {!isTouch && <CustomCursor />}
+            <AuthProvider>
+                <DashboardDataProvider>
+                    <Router>
+                        <TutorialProvider>
+                            <Routes>
+                                {/* Auth - Público */}
+                                <Route path="/login" element={<SwapAuthPage />} />
+                                <Route path="/entrar-na-igreja" element={<SelectChurchPage />} />
+                                <Route path="/criar-igreja" element={<CreateChurchPage />} />
+                                <Route path="/super-admin" element={<SuperAdminPage />} />
+                                <Route path="/aguardando-aprovacao" element={<AwaitingApprovalPage />} />
+                                <Route path="/convite/:inviteId" element={<InviteLandingPage />} />
 
-                            {/* Admin/Pastor - Dashboard Completo */}
-                            <Route path="/" element={<RootRedirect />} />
+                                {/* Admin/Pastor - Dashboard Completo */}
+                                <Route path="/" element={<RootRedirect />} />
 
-                            <Route path="/dashboard" element={
-                                <ProtectedRoute requiredRoles={['admin', 'pastor_chefe']}>
-                                    <DashboardPage />
-                                </ProtectedRoute>
-                            } />
+                                <Route path="/dashboard" element={
+                                    <ProtectedRoute requiredRoles={['admin', 'pastor_chefe']}>
+                                        <DashboardPage />
+                                    </ProtectedRoute>
+                                } />
 
-                            <Route path="/membros" element={
-                                <ProtectedRoute requiredRoles={['admin', 'pastor_chefe', 'pastor_lider']}>
-                                    <MembrosPage />
-                                </ProtectedRoute>
-                            } />
+                                <Route path="/membros" element={
+                                    <ProtectedRoute requiredRoles={['admin', 'pastor_chefe', 'pastor_lider']}>
+                                        <MembrosPage />
+                                    </ProtectedRoute>
+                                } />
 
-                            <Route path="/visitantes" element={
-                                <ProtectedRoute requiredRoles={['admin', 'pastor_chefe', 'pastor_lider']}>
-                                    <VisitantesPage />
-                                </ProtectedRoute>
-                            } />
+                                <Route path="/visitantes" element={
+                                    <ProtectedRoute requiredRoles={['admin', 'pastor_chefe', 'pastor_lider']}>
+                                        <VisitantesPage />
+                                    </ProtectedRoute>
+                                } />
 
-                            <Route path="/grupos" element={
-                                <ProtectedRoute>
-                                    <ProfileGate>
-                                        <GruposPage />
-                                    </ProfileGate>
-                                </ProtectedRoute>
-                            } />
+                                <Route path="/grupos" element={
+                                    <ProtectedRoute>
+                                        <ProfileGate>
+                                            <GruposPage />
+                                        </ProfileGate>
+                                    </ProtectedRoute>
+                                } />
 
-                            <Route path="/eventos" element={
-                                <ProtectedRoute requiredRoles={['admin', 'pastor_chefe', 'pastor_lider']}>
-                                    <EventosPage />
-                                </ProtectedRoute>
-                            } />
+                                <Route path="/eventos" element={
+                                    <ProtectedRoute requiredRoles={['admin', 'pastor_chefe', 'pastor_lider']}>
+                                        <EventosPage />
+                                    </ProtectedRoute>
+                                } />
 
-                            <Route path="/escalas" element={
-                                <ProtectedRoute requiredRoles={['admin', 'pastor_chefe', 'pastor_lider', 'lider']}>
-                                    <MemberAgendaPage />
-                                </ProtectedRoute>
-                            } />
+                                <Route path="/escalas" element={
+                                    <ProtectedRoute requiredRoles={['admin', 'pastor_chefe', 'pastor_lider', 'lider']}>
+                                        <MemberAgendaPage />
+                                    </ProtectedRoute>
+                                } />
 
-                            <Route path="/financeiro" element={
-                                <ProtectedRoute requiredRoles={['admin', 'pastor_chefe', 'financeiro']}>
-                                    <FinanceiroPage />
-                                </ProtectedRoute>
-                            } />
+                                <Route path="/financeiro" element={
+                                    <ProtectedRoute requiredRoles={['admin', 'pastor_chefe', 'financeiro']}>
+                                        <FinanceiroPage />
+                                    </ProtectedRoute>
+                                } />
 
-                            <Route path="/ministerios" element={
-                                <ProtectedRoute requiredRoles={['admin', 'pastor_chefe', 'pastor_lider', 'lider']}>
-                                    <MinisteriosPage />
-                                </ProtectedRoute>
-                            } />
+                                <Route path="/ministerios" element={
+                                    <ProtectedRoute requiredRoles={['admin', 'pastor_chefe', 'pastor_lider', 'lider']}>
+                                        <MinisteriosPage />
+                                    </ProtectedRoute>
+                                } />
 
-                            <Route path="/lider/comunicacao" element={
-                                <ProtectedRoute requiredRoles={['admin', 'pastor_chefe', 'pastor_lider', 'lider']}>
-                                    <ComunicacaoPage />
-                                </ProtectedRoute>
-                            } />
-
-
-
-                            <Route path="/biblia" element={
-                                <ProtectedRoute>
-                                    <DashboardLayout>
-                                        <BiblePage />
-                                    </DashboardLayout>
-                                </ProtectedRoute>
-                            } />
-
-                            <Route path="/jornal" element={
-                                <ProtectedRoute requiredRoles={['admin', 'pastor_chefe', 'pastor_lider', 'lider', 'financeiro']}>
-                                    <DashboardLayout>
-                                        <JornalContent hideCheckin={true} />
-                                    </DashboardLayout>
-                                </ProtectedRoute>
-                            } />
+                                <Route path="/lider/comunicacao" element={
+                                    <ProtectedRoute requiredRoles={['admin', 'pastor_chefe', 'pastor_lider', 'lider']}>
+                                        <ComunicacaoPage />
+                                    </ProtectedRoute>
+                                } />
 
 
 
-                            <Route path="/perfil" element={
-                                <ProtectedRoute>
-                                    <DashboardLayout>
-                                        <MemberProfilePage />
-                                    </DashboardLayout>
-                                </ProtectedRoute>
-                            } />
-
-
-
-
-                            {/* ÁREA DO MEMBRO (Portal Mobile-First) */}
-                            <Route path="/membro" element={
-                                <ProtectedRoute>
-                                    <DashboardLayout>
-                                        <MemberHomePage />
-                                    </DashboardLayout>
-                                </ProtectedRoute>
-                            } />
-                            <Route path="/membro/agenda" element={
-                                <ProtectedRoute>
-                                    <ProfileGate>
+                                <Route path="/biblia" element={
+                                    <ProtectedRoute>
                                         <DashboardLayout>
-                                            <MemberAgendaPage />
+                                            <BiblePage />
                                         </DashboardLayout>
-                                    </ProfileGate>
-                                </ProtectedRoute>
-                            } />
-                            <Route path="/membro/perfil" element={
-                                <ProtectedRoute>
-                                    <DashboardLayout>
-                                        <MemberProfilePage />
-                                    </DashboardLayout>
-                                </ProtectedRoute>
-                            } />
-                            <Route path="/membro/checkin" element={
-                                <ProtectedRoute>
-                                    <ProfileGate>
-                                        <DashboardLayout>
-                                            <MemberCheckinPage />
-                                        </DashboardLayout>
-                                    </ProfileGate>
-                                </ProtectedRoute>
-                            } />
-                            <Route path="/membro/estudos" element={
-                                <ProtectedRoute>
-                                    <ProfileGate>
-                                        <DashboardLayout>
-                                            <MemberStudiesPage />
-                                        </DashboardLayout>
-                                    </ProfileGate>
-                                </ProtectedRoute>
-                            } />
+                                    </ProtectedRoute>
+                                } />
 
-                            {/* Fallback */}
-                            <Route path="*" element={<Navigate to="/" replace />} />
-                        </Routes>
-                    </TutorialProvider>
-                </Router>
-            </DashboardDataProvider>
-        </AuthProvider>
+                                <Route path="/jornal" element={
+                                    <ProtectedRoute requiredRoles={['admin', 'pastor_chefe', 'pastor_lider', 'lider', 'financeiro']}>
+                                        <DashboardLayout>
+                                            <JornalContent hideCheckin={true} />
+                                        </DashboardLayout>
+                                    </ProtectedRoute>
+                                } />
+
+
+
+                                <Route path="/perfil" element={
+                                    <ProtectedRoute>
+                                        <DashboardLayout>
+                                            <MemberProfilePage />
+                                        </DashboardLayout>
+                                    </ProtectedRoute>
+                                } />
+
+
+
+
+                                {/* ÁREA DO MEMBRO (Portal Mobile-First) */}
+                                <Route path="/membro" element={
+                                    <ProtectedRoute>
+                                        <DashboardLayout>
+                                            <MemberHomePage />
+                                        </DashboardLayout>
+                                    </ProtectedRoute>
+                                } />
+                                <Route path="/membro/agenda" element={
+                                    <ProtectedRoute>
+                                        <ProfileGate>
+                                            <DashboardLayout>
+                                                <MemberAgendaPage />
+                                            </DashboardLayout>
+                                        </ProfileGate>
+                                    </ProtectedRoute>
+                                } />
+                                <Route path="/membro/perfil" element={
+                                    <ProtectedRoute>
+                                        <DashboardLayout>
+                                            <MemberProfilePage />
+                                        </DashboardLayout>
+                                    </ProtectedRoute>
+                                } />
+                                <Route path="/membro/checkin" element={
+                                    <ProtectedRoute>
+                                        <ProfileGate>
+                                            <DashboardLayout>
+                                                <MemberCheckinPage />
+                                            </DashboardLayout>
+                                        </ProfileGate>
+                                    </ProtectedRoute>
+                                } />
+                                <Route path="/membro/estudos" element={
+                                    <ProtectedRoute>
+                                        <ProfileGate>
+                                            <DashboardLayout>
+                                                <MemberStudiesPage />
+                                            </DashboardLayout>
+                                        </ProfileGate>
+                                    </ProtectedRoute>
+                                } />
+
+                                {/* Fallback */}
+                                <Route path="*" element={<Navigate to="/" replace />} />
+                            </Routes>
+                        </TutorialProvider>
+                    </Router>
+                </DashboardDataProvider>
+            </AuthProvider>
+        </>
     );
 }

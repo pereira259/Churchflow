@@ -17,6 +17,7 @@ import { PremiumToast, ToastType } from '@/components/ui/PremiumToast';
 import { ChurchSelectionModal } from '@/components/ChurchSelectionModal';
 import { WelcomePortal } from '@/components/onboarding/WelcomePortal';
 import { QuestLog } from '@/components/onboarding/QuestLog';
+import { ProfileParticles } from '@/components/profile/ProfileParticles';
 
 
 const container = {
@@ -485,6 +486,7 @@ export function MemberProfilePage() {
                 <div className="relative h-24 md:h-28 rounded-b-[2rem] overflow-hidden shrink-0 shadow-2xl">
                     <div className="absolute inset-0 bg-[#0f172a]">
                         <div className="absolute inset-0 bg-gradient-to-br from-[#1e1b4b] via-[#2e2a5b] to-[#0f172a]"></div>
+                        <ProfileParticles />
                         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#d4af37] rounded-full blur-[150px] opacity-[0.15] -translate-y-1/2 translate-x-1/4"></div>
                         <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-indigo-500 rounded-full blur-[130px] opacity-[0.12] translate-y-1/3 -translate-x-1/4"></div>
                         <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '32px 32px' }}></div>

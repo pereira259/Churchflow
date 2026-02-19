@@ -287,57 +287,87 @@ export function ManagementDrawer({
                             <AnimatePresence mode="wait">
                                 {drawerScreen === 'menu' ? (
                                     <motion.div
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: -10 }}
+                                        initial={{ opacity: 0, scale: 0.96, y: -8 }}
+                                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                                        exit={{ opacity: 0, scale: 0.96, y: -8 }}
+                                        transition={{ duration: 0.2, ease: 'easeOut' }}
                                         className="grid grid-cols-2 gap-3"
                                     >
-                                        <button onClick={() => setDrawerScreen('institutional')} className="col-span-2 p-5 rounded-[1.5rem] bg-gradient-to-br from-indigo-50 to-white border border-indigo-100 flex items-center gap-4 hover:shadow-lg hover:shadow-indigo-100/50 transition-all group text-left">
-                                            <div className="w-12 h-12 rounded-2xl bg-white shadow-sm flex items-center justify-center text-indigo-600 group-hover:scale-110 transition-transform">
-                                                <Building className="w-6 h-6" />
-                                            </div>
-                                            <div>
-                                                <h4 className="font-bold text-[#1e1b4b]">Institucional</h4>
-                                                <p className="text-[10px] text-slate-400 font-medium">Dados da Igreja</p>
-                                            </div>
-                                        </button>
-
-                                        <button onClick={() => setDrawerScreen('admins')} className="p-5 rounded-[1.5rem] bg-slate-50 border border-slate-100 hover:bg-white hover:border-emerald-200 hover:shadow-lg hover:shadow-emerald-100/50 transition-all group flex flex-col gap-3">
-                                            <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-emerald-600 group-hover:scale-110 transition-transform">
-                                                <ShieldCheck className="w-5 h-5" />
-                                            </div>
-                                            <div>
-                                                <h4 className="font-bold text-slate-700">Liderança</h4>
-                                                <p className="text-[10px] text-slate-400">Admins & Permissões</p>
-                                            </div>
-                                        </button>
-
-                                        <button onClick={() => setDrawerScreen('finance')} className="p-5 rounded-[1.5rem] bg-slate-50 border border-slate-100 hover:bg-white hover:border-amber-200 hover:shadow-lg hover:shadow-amber-100/50 transition-all group flex flex-col gap-3">
-                                            <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-amber-600 group-hover:scale-110 transition-transform">
-                                                <CreditCard className="w-5 h-5" />
-                                            </div>
-                                            <div>
-                                                <h4 className="font-bold text-slate-700">Financeiro</h4>
-                                                <p className="text-[10px] text-slate-400">Chaves Pix & Dados</p>
-                                            </div>
-                                        </button>
-
-                                        <button onClick={() => setDrawerScreen('multi')} className="col-span-2 p-4 rounded-[1.5rem] bg-slate-50 border border-slate-100 flex items-center justify-between hover:bg-slate-100 transition-all opacity-50 cursor-not-allowed">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-xl bg-white shadow-sm flex items-center justify-center text-slate-400">
-                                                    <Globe className="w-5 h-5" />
+                                        {[
+                                            {
+                                                id: 'institutional',
+                                                title: 'Institucional',
+                                                desc: 'Dados da Igreja',
+                                                icon: <Building className="w-6 h-6" />,
+                                                onClick: () => setDrawerScreen('institutional'),
+                                                className: "col-span-2 bg-gradient-to-br from-indigo-50 to-white border-indigo-100 hover:shadow-indigo-100/50 text-[#1e1b4b] icon-bg-white icon-text-indigo-600",
+                                                iconContainerClass: "bg-white text-indigo-600"
+                                            },
+                                            {
+                                                id: 'admins',
+                                                title: 'Liderança',
+                                                desc: 'Admins & Permissões',
+                                                icon: <ShieldCheck className="w-5 h-5" />,
+                                                onClick: () => setDrawerScreen('admins'),
+                                                className: "bg-slate-50 border-slate-100 hover:bg-white hover:border-emerald-200 hover:shadow-emerald-100/50 text-slate-700 flex-col items-start gap-3",
+                                                iconContainerClass: "bg-white text-emerald-600 w-10 h-10 rounded-xl"
+                                            },
+                                            {
+                                                id: 'finance',
+                                                title: 'Financeiro',
+                                                desc: 'Chaves Pix & Dados',
+                                                icon: <CreditCard className="w-5 h-5" />,
+                                                onClick: () => setDrawerScreen('finance'),
+                                                className: "bg-slate-50 border-slate-100 hover:bg-white hover:border-amber-200 hover:shadow-amber-100/50 text-slate-700 flex-col items-start gap-3",
+                                                iconContainerClass: "bg-white text-amber-600 w-10 h-10 rounded-xl"
+                                            },
+                                            {
+                                                id: 'multi',
+                                                title: 'Multisite / Filiais',
+                                                desc: 'Em Breve',
+                                                icon: <Globe className="w-5 h-5" />,
+                                                onClick: () => setDrawerScreen('multi'),
+                                                className: "col-span-2 bg-slate-50 border-slate-100 hover:bg-slate-100 opacity-50 cursor-not-allowed justify-between",
+                                                iconContainerClass: "bg-white text-slate-400 w-10 h-10 rounded-xl",
+                                                extraIcon: <Lock className="w-4 h-4 text-slate-300" />
+                                            }
+                                        ].map((item, i) => (
+                                            <motion.button
+                                                key={item.id}
+                                                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                                                transition={{
+                                                    delay: i * 0.08,
+                                                    duration: 0.3,
+                                                    ease: [0.23, 1, 0.32, 1]
+                                                }}
+                                                onClick={item.onClick}
+                                                className={`p-5 rounded-[1.5rem] border transition-all group flex ${item.className}`}
+                                            >
+                                                <div className={`flex items-center gap-4 ${item.id === 'multi' ? 'flex-1' : ''}`}>
+                                                    <div className={`shadow-sm flex items-center justify-center group-hover:scale-110 transition-transform ${item.id === 'institutional' ? 'w-12 h-12 rounded-2xl' : 'w-10 h-10 rounded-xl'} ${item.iconContainerClass}`}>
+                                                        {item.icon}
+                                                    </div>
+                                                    <div>
+                                                        <h4 className={`font-bold ${item.id === 'multi' ? 'text-slate-500' : 'text-inherit'}`}>{item.title}</h4>
+                                                        <p className="text-[10px] text-slate-400 font-medium">{item.desc}</p>
+                                                    </div>
                                                 </div>
-                                                <div className="text-left">
-                                                    <h4 className="font-bold text-slate-500">Multisite / Filiais</h4>
-                                                    <p className="text-[10px] text-slate-400">Em Breve</p>
-                                                </div>
-                                            </div>
-                                            <Lock className="w-4 h-4 text-slate-300" />
-                                        </button>
+                                                {item.extraIcon}
+                                            </motion.button>
+                                        ))}
 
-                                        <button onClick={onSuspender} className="col-span-2 mt-4 p-4 rounded-xl border border-red-100 bg-red-50/50 text-red-600 font-bold text-xs hover:bg-red-50 transition-colors flex items-center justify-center gap-2">
+                                        <motion.button
+                                            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                                            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                                            transition={{ delay: 0.32, duration: 0.3 }}
+                                            onClick={onSuspender}
+                                            className="col-span-2 mt-4 p-4 rounded-xl border border-red-100 bg-red-50/50 text-red-600 font-bold text-xs hover:bg-red-50 transition-colors flex items-center justify-center gap-2"
+                                        >
                                             <Trash2 className="w-4 h-4" /> Zona de Perigo
-                                        </button>
+                                        </motion.button>
                                     </motion.div>
                                 ) : drawerScreen === 'institutional' ? (
                                     <motion.form

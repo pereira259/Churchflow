@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Wallet,
     Plus,
+    Upload,
     ArrowUpRight,
     ArrowDownRight,
     Search,
@@ -39,6 +40,8 @@ import {
     Member
 } from '@/lib/supabase-queries';
 import { cn } from '@/lib/utils';
+import { ImportarExtrato } from '@/components/financeiro/ImportarExtrato';
+import { AnimatedValue } from '@/components/ui/AnimatedValue';
 
 // ...
 // const DEFAULT_CHURCH_ID = '00000000-0000-0000-0000-000000000001'; // REMOVED
@@ -114,6 +117,7 @@ export function FinanceiroPage() {
     const [transactionToDelete, setTransactionToDelete] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
     const [hoveredPoint, setHoveredPoint] = useState<any | null>(null);
+    const [modalTab, setModalTab] = useState<'manual' | 'import'>('manual');
 
     const handleSaveTransaction = async () => {
         if (!churchId) {
@@ -363,7 +367,7 @@ export function FinanceiroPage() {
                                                 {stats.balance > 0 ? '● Saudável' : stats.balance < 0 ? '● Crítico' : '● Atenção'}
                                             </div>
                                         </div>
-                                        <p className="text-3xl font-display font-black italic text-marinho leading-none mb-2">{formatCurrency(stats.balance)}</p>
+                                        <p className="text-3xl font-display font-black italic text-marinho leading-none mb-2"><AnimatedValue value={stats.balance} duration={1800} delay={100} /></p>
                                         <div className="flex items-center gap-1.5 text-slate-400 mt-auto">
                                             <span className="text-[9px] uppercase tracking-wider">Hover para detalhes</span>
                                             <motion.span
@@ -394,11 +398,11 @@ export function FinanceiroPage() {
                                             <p className="text-[8px] font-bold text-white/60 uppercase tracking-wider mb-1">Breakdown</p>
                                             <div className="flex items-center justify-between text-[10px] mb-1">
                                                 <span className="text-sage">Entradas:</span>
-                                                <span className="font-bold">{formatCurrency(stats.incomes)}</span>
+                                                <span className="font-bold"><AnimatedValue value={stats.incomes} prefix="R$ " /></span>
                                             </div>
                                             <div className="flex items-center justify-between text-[10px]">
                                                 <span className="text-red-400">Saídas:</span>
-                                                <span className="font-bold">{formatCurrency(stats.expenses)}</span>
+                                                <span className="font-bold"><AnimatedValue value={stats.expenses} prefix="R$ " /></span>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-1">
@@ -440,7 +444,7 @@ export function FinanceiroPage() {
                                             </div>
                                             <div>
                                                 <p className="text-[8px] font-bold text-slate-400 uppercase">Entradas</p>
-                                                <p className="text-lg font-display font-black italic text-sage leading-none">{formatCurrency(stats.incomes)}</p>
+                                                <p className="text-lg font-display font-black italic text-sage leading-none"><AnimatedValue value={stats.incomes} duration={1000} delay={300} /></p>
                                             </div>
                                         </div>
 
@@ -453,7 +457,7 @@ export function FinanceiroPage() {
                                             </div>
                                             <div>
                                                 <p className="text-[8px] font-bold text-slate-400 uppercase">Saídas</p>
-                                                <p className="text-lg font-display font-black italic text-red-500 leading-none">{formatCurrency(stats.expenses)}</p>
+                                                <p className="text-lg font-display font-black italic text-red-500 leading-none"><AnimatedValue value={stats.expenses} duration={1000} delay={450} /></p>
                                             </div>
                                         </div>
                                     </div>
@@ -484,7 +488,7 @@ export function FinanceiroPage() {
                                             <div className="flex justify-between text-[9px] mb-1">
                                                 <span className="opacity-70">Saldo líquido</span>
                                                 <span className={cn("font-bold", stats.balance > 0 ? "text-sage" : "text-red-400")}>
-                                                    {formatCurrency(stats.balance)}
+                                                    <AnimatedValue value={stats.balance} />
                                                 </span>
                                             </div>
                                             <div className="h-1.5 bg-white/20 rounded-full overflow-hidden">
@@ -631,18 +635,19 @@ export function FinanceiroPage() {
                                                                             <p className={cn("text-lg font-display font-black italic tracking-tighter",
                                                                                 (hoveredPoint.data.in - hoveredPoint.data.out) >= 0 ? "text-sage" : "text-red-400"
                                                                             )}>
-                                                                                {formatCurrency(hoveredPoint.data.in - hoveredPoint.data.out)}
+                                                                                {/* Tooltip animated value manually invoked or use component? Component is better */}
+                                                                                <AnimatedValue value={hoveredPoint.data.in - hoveredPoint.data.out} />
                                                                             </p>
                                                                         </div>
                                                                         <div className="w-px h-8 bg-white/10" />
                                                                         <div className="space-y-1 text-right flex-1">
                                                                             <div className="flex items-center justify-end gap-1.5 text-[9px] text-sage font-bold">
                                                                                 <span className="opacity-70">ENT</span>
-                                                                                <span>{formatCurrency(hoveredPoint.data.in)}</span>
+                                                                                <span><AnimatedValue value={hoveredPoint.data.in} /></span>
                                                                             </div>
                                                                             <div className="flex items-center justify-end gap-1.5 text-[9px] text-red-400 font-bold">
                                                                                 <span className="opacity-70">SAI</span>
-                                                                                <span>{formatCurrency(hoveredPoint.data.out)}</span>
+                                                                                <span><AnimatedValue value={hoveredPoint.data.out} /></span>
                                                                             </div>
                                                                         </div>
                                                                     </div>
@@ -728,7 +733,7 @@ export function FinanceiroPage() {
                                                                         })()}
                                                                     </span></div></div>
                                                         </div>
-                                                        <div className="flex items-center gap-3"><p className={cn("text-[10px] font-display font-bold italic leading-none", isIncome ? "text-sage" : "text-red-500")}>{formatCurrency(t.amount)}</p><button onClick={(e) => handleDeleteTransaction(t.id, e)} className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-50 text-slate-300 hover:text-red-500 rounded-lg transition-all" title="Excluir Lançamento"><Trash2 className="w-3.5 h-3.5" /></button></div>
+                                                        <div className="flex items-center gap-3"><p className={cn("text-[10px] font-display font-bold italic leading-none", isIncome ? "text-sage" : "text-red-500")}><AnimatedValue value={Math.abs(t.amount)} /></p><button onClick={(e) => handleDeleteTransaction(t.id, e)} className="opacity-0 group-hover:opacity-100 p-1.5 hover:bg-red-50 text-slate-300 hover:text-red-500 rounded-lg transition-all" title="Excluir Lançamento"><Trash2 className="w-3.5 h-3.5" /></button></div>
                                                     </div>
                                                 );
                                             })
@@ -755,7 +760,7 @@ export function FinanceiroPage() {
                                 <div className="space-y-2 py-1">
                                     {stats.byCategory.map((cat) => (
                                         <div key={cat.name} className="space-y-1.5">
-                                            <div className="flex justify-between items-end"><span className="text-[10px] font-black text-marinho/30 uppercase tracking-[0.2em] leading-none">{cat.name}</span><div className="text-right"><span className="text-[12px] font-bold text-marinho tracking-tight leading-none block">{formatCurrency(cat.amount)}</span><span className="text-[7px] font-black text-slate-300 uppercase tracking-widest mt-0.5 block">{(cat.amount / Math.max(stats.incomes, 1) * 100).toFixed(1)}% do total</span></div></div>
+                                            <div className="flex justify-between items-end"><span className="text-[10px] font-black text-marinho/30 uppercase tracking-[0.2em] leading-none">{cat.name}</span><div className="text-right"><span className="text-[12px] font-bold text-marinho tracking-tight leading-none block"><AnimatedValue value={cat.amount} /></span><span className="text-[7px] font-black text-slate-300 uppercase tracking-widest mt-0.5 block">{(cat.amount / Math.max(stats.incomes, 1) * 100).toFixed(1)}% do total</span></div></div>
                                             <div className="h-1.5 w-full bg-slate-50 rounded-full overflow-hidden"><motion.div initial={{ width: 0 }} animate={{ width: `${(cat.amount / Math.max(stats.incomes, 1)) * 100}%` }} className={cn("h-full rounded-full transition-all duration-1000", cat.color)} /></div>
                                         </div>
                                     ))}
@@ -857,183 +862,222 @@ export function FinanceiroPage() {
             <AnimatePresence>
                 {isNewEntryOpen && (
                     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-marinho/40 backdrop-blur-sm">
-                        <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="bg-white rounded-[2rem] w-full max-w-sm overflow-hidden shadow-2xl">
-                            <div className="bg-marinho p-5 text-white relative text-left">
+                        <motion.div initial={{ opacity: 0, scale: 0.95, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 20 }} className="bg-white rounded-[2rem] w-full max-w-sm overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+                            <div className="bg-marinho p-4 pb-0 relative text-left">
                                 <button onClick={() => setIsNewEntryOpen(false)} className="absolute top-4 right-4 text-white/40 hover:text-white transition-colors"><X className="w-5 h-5" /></button>
-                                <h3 className="text-lg font-display font-bold italic">Novo Lançamento</h3>
-                                <p className="text-[9px] font-black text-white/40 uppercase tracking-[0.2em] mt-0.5">Registrar movimentação</p>
-                            </div>
-                            <div className="p-5 space-y-4 text-left">
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="space-y-1">
-                                        <label className="text-[9px] font-black text-marinho/40 uppercase tracking-widest ml-1">Tipo</label>
-                                        <div className="relative flex w-full h-9 bg-slate-100 rounded-lg p-0.5 cursor-pointer shadow-inner">
-                                            <motion.div className={cn("absolute top-0.5 bottom-0.5 w-[calc(50%-2px)] rounded-md shadow-sm z-0", newEntryType === 'in' ? "bg-sage" : "bg-red-400")} initial={false} animate={{ x: newEntryType === 'in' ? 0 : "100%" }} transition={{ type: "spring", stiffness: 500, damping: 30 }} />
-                                            <button onClick={() => setNewEntryType('in')} className={cn("flex-1 z-10 text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors", newEntryType === 'in' ? "text-white" : "text-slate-400")}>Entrada</button>
-                                            <button onClick={() => setNewEntryType('out')} className={cn("flex-1 z-10 text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors", newEntryType === 'out' ? "text-white" : "text-slate-400")}>Saída</button>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-[9px] font-black text-marinho/40 uppercase tracking-widest ml-1">Valor</label>
-                                        <input
-                                            type="text"
-                                            value={newEntryAmount}
-                                            onChange={(e) => {
-                                                let value = e.target.value;
-                                                // Remove everything that is not digit
-                                                value = value.replace(/\D/g, "");
-                                                // Convert to number and format currency
-                                                const numericValue = Number(value) / 100;
-                                                const formatted = numericValue.toLocaleString("pt-BR", {
-                                                    style: "currency",
-                                                    currency: "BRL"
-                                                });
-                                                setNewEntryAmount(formatted);
-                                            }}
-                                            className="w-full h-9 px-3 bg-slate-50 rounded-xl text-sm font-bold outline-none border border-transparent focus:border-marinho/10 transition-all font-display italic"
-                                            placeholder="R$ 0,00"
-                                        />
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="space-y-1">
-                                        <label className="text-[9px] font-black text-marinho/40 uppercase tracking-widest ml-1">{newEntryType === 'in' ? 'Nome do Ofertante' : 'Beneficiário'}</label>
-                                        {newEntryType === 'in' ? (
-                                            <div className="relative">
-                                                <div className="relative">
-                                                    <input
-                                                        type="text"
-                                                        value={selectedMemberId ? members.find(m => m.id === selectedMemberId)?.full_name : memberSearchTerm}
-                                                        onChange={(e) => {
-                                                            setMemberSearchTerm(e.target.value);
-                                                            setSelectedMemberId(null);
-                                                            setNewEntryBeneficiary(e.target.value);
-                                                            setIsMemberDropdownOpen(true);
-                                                        }}
-                                                        onFocus={() => setIsMemberDropdownOpen(true)}
-                                                        className={cn(
-                                                            "w-full h-9 px-3 bg-slate-50 rounded-xl text-[10px] font-bold outline-none border border-transparent focus:border-marinho/10 transition-all",
-                                                            selectedMemberId && "text-marinho bg-marinho/5 pl-8"
-                                                        )}
-                                                        placeholder="Buscar membro ou digitar nome..."
-                                                    />
-                                                    {selectedMemberId && (
-                                                        <div className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-marinho text-white flex items-center justify-center text-[8px] font-black">
-                                                            {members.find(m => m.id === selectedMemberId)?.full_name.charAt(0)}
-                                                        </div>
-                                                    )}
-                                                    {selectedMemberId && (
-                                                        <button
-                                                            onClick={() => { setSelectedMemberId(null); setMemberSearchTerm(''); setNewEntryBeneficiary(''); }}
-                                                            className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-500"
-                                                        >
-                                                            <XCircle className="w-3.5 h-3.5" />
-                                                        </button>
-                                                    )}
-                                                </div>
-                                                <AnimatePresence>
-                                                    {isMemberDropdownOpen && memberSearchTerm && !selectedMemberId && members.filter(m => m.full_name?.toLowerCase().includes(memberSearchTerm.toLowerCase())).length > 0 && (
-                                                        <motion.div
-                                                            initial={{ opacity: 0, y: 5 }}
-                                                            animate={{ opacity: 1, y: 0 }}
-                                                            exit={{ opacity: 0, y: 5 }}
-                                                            className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-100 rounded-xl shadow-xl z-50 max-h-48 overflow-y-auto"
-                                                        >
-                                                            {members
-                                                                .filter(m => m.full_name?.toLowerCase().includes(memberSearchTerm.toLowerCase()))
-                                                                .slice(0, 5)
-                                                                .map(member => (
-                                                                    <div
-                                                                        key={member.id}
-                                                                        onClick={() => {
-                                                                            setSelectedMemberId(member.id);
-                                                                            setMemberSearchTerm(member.full_name);
-                                                                            setIsMemberDropdownOpen(false);
-                                                                        }}
-                                                                        className="px-3 py-2 hover:bg-slate-50 cursor-pointer flex items-center gap-2"
-                                                                    >
-                                                                        <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-500 overflow-hidden">
-                                                                            {member.photo_url ? <img src={member.photo_url} alt="" className="w-full h-full object-cover" /> : member.full_name.charAt(0)}
-                                                                        </div>
-                                                                        <div>
-                                                                            <p className="text-[10px] font-bold text-marinho">{member.full_name}</p>
-                                                                            <p className="text-[8px] text-slate-400">{member.church_role || 'Membro'}</p>
-                                                                        </div>
-                                                                    </div>
-                                                                ))
-                                                            }
-                                                        </motion.div>
-                                                    )}
-                                                </AnimatePresence>
-                                            </div>
-                                        ) : (
-                                            <input type="text" value={newEntryBeneficiary} onChange={(e) => setNewEntryBeneficiary(e.target.value)} className="w-full h-9 px-3 bg-slate-50 rounded-xl text-[10px] font-bold outline-none border border-transparent focus:border-marinho/10 transition-all" placeholder="Ex: Fornecedor..." />
-                                        )}
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-[9px] font-black text-marinho/40 uppercase tracking-widest ml-1">Centro de Custo</label>
-                                        <div className="relative">
-                                            <select value={newEntryCostCenter} onChange={(e) => setNewEntryCostCenter(e.target.value)} className="w-full h-9 pl-3 pr-8 bg-slate-50 rounded-xl text-[10px] font-bold outline-none border border-transparent focus:border-marinho/10 transition-all appearance-none cursor-pointer">
-                                                <option value="">Geral (Padrão)</option>
-                                                {costCenters.map(c => (
-                                                    <option key={c.id} value={c.id}>{c.name}</option>
-                                                ))}
-                                            </select>
-                                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-300 pointer-events-none" />
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="space-y-1">
-                                        <label className="text-[9px] font-black text-marinho/40 uppercase tracking-widest ml-1">Método</label>
-                                        <div className="relative">
-                                            <select value={newEntryMethod} onChange={(e) => setNewEntryMethod(e.target.value)} className="w-full h-9 pl-3 pr-8 bg-slate-50 rounded-xl text-[10px] font-bold outline-none border border-transparent focus:border-marinho/10 transition-all appearance-none cursor-pointer">
-                                                <option value="PIX">PIX</option>
-                                                <option value="Dinheiro">Dinheiro</option>
-                                                <option value="Cartão">Cartão</option>
-                                                <option value="Boleto">Boleto</option>
-                                            </select>
-                                            <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-300 pointer-events-none" />
-                                        </div>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label className="text-[9px] font-black text-marinho/40 uppercase tracking-widest ml-1">Data</label>
-                                        <button onClick={() => setIsCalendarOpen(true)} className="w-full h-9 px-3 bg-slate-50 rounded-xl text-[10px] font-bold text-left flex items-center justify-between group border border-transparent focus:border-marinho/10 transition-all">
-                                            <span className="text-marinho">{new Date(newEntryDate + 'T12:00:00').toLocaleDateString('pt-BR')}</span>
-                                            <CalendarDays className="w-3.5 h-3.5 text-slate-400 group-hover:text-marinho transition-colors" />
+                                <h3 className="text-base font-display font-bold italic text-white flex items-center gap-2">
+                                    Novo Lançamento
+                                    <span className="bg-white/20 text-white text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-widest">{modalTab === 'manual' ? 'Manual' : 'Importação'}</span>
+                                </h3>
+
+                                {/* Tabs - Segmented Design */}
+                                <div className="flex bg-black/20 p-1 rounded-xl mt-3 mb-2">
+                                    {['manual', 'import'].map(t => (
+                                        <button
+                                            key={t}
+                                            onClick={() => setModalTab(t as 'manual' | 'import')}
+                                            className={cn(
+                                                "flex-1 h-8 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all relative overflow-hidden",
+                                                modalTab === t ? "text-marinho shadow-sm" : "text-white/60 hover:text-white hover:bg-white/5"
+                                            )}
+                                        >
+                                            {modalTab === t && (
+                                                <motion.div layoutId="activeTab" className="absolute inset-0 bg-white z-0" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />
+                                            )}
+                                            <span className="relative z-10 flex items-center justify-center gap-2">
+                                                {t === 'manual' ? <FileText className="w-3.5 h-3.5" /> : <Upload className="w-3.5 h-3.5" />}
+                                                {t === 'manual' ? 'Manual' : 'Importar Extrato'}
+                                            </span>
                                         </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="flex-1 overflow-hidden flex flex-col">
+                                {modalTab === 'manual' ? (
+                                    <div className="p-4 space-y-2 text-left flex-1 flex flex-col h-full overflow-hidden">
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div className="space-y-0.5">
+                                                <label className="text-[9px] font-black text-marinho/40 uppercase tracking-widest ml-1">Tipo</label>
+                                                <div className="relative flex w-full h-8 bg-slate-100 rounded-lg p-0.5 cursor-pointer shadow-inner">
+                                                    <motion.div className={cn("absolute top-0.5 bottom-0.5 w-[calc(50%-2px)] rounded-md shadow-sm z-0", newEntryType === 'in' ? "bg-sage" : "bg-red-400")} initial={false} animate={{ x: newEntryType === 'in' ? 0 : "100%" }} transition={{ type: "spring", stiffness: 500, damping: 30 }} />
+                                                    <button onClick={() => setNewEntryType('in')} className={cn("flex-1 z-10 text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors", newEntryType === 'in' ? "text-white" : "text-slate-400")}>Entrada</button>
+                                                    <button onClick={() => setNewEntryType('out')} className={cn("flex-1 z-10 text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-colors", newEntryType === 'out' ? "text-white" : "text-slate-400")}>Saída</button>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-0.5">
+                                                <label className="text-[9px] font-black text-marinho/40 uppercase tracking-widest ml-1">Valor</label>
+                                                <input
+                                                    type="text"
+                                                    value={newEntryAmount}
+                                                    onChange={(e) => {
+                                                        let value = e.target.value;
+                                                        value = value.replace(/\D/g, "");
+                                                        const numericValue = Number(value) / 100;
+                                                        const formatted = numericValue.toLocaleString("pt-BR", {
+                                                            style: "currency",
+                                                            currency: "BRL"
+                                                        });
+                                                        setNewEntryAmount(formatted);
+                                                    }}
+                                                    className="w-full h-8 px-3 bg-slate-50 rounded-xl text-sm font-bold outline-none border border-transparent focus:border-marinho/10 transition-all font-display italic"
+                                                    placeholder="R$ 0,00"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div className="space-y-0.5">
+                                                <label className="text-[9px] font-black text-marinho/40 uppercase tracking-widest ml-1">{newEntryType === 'in' ? 'Nome do Ofertante' : 'Beneficiário'}</label>
+                                                {newEntryType === 'in' ? (
+                                                    <div className="relative">
+                                                        <div className="relative">
+                                                            <input
+                                                                type="text"
+                                                                value={selectedMemberId ? members.find(m => m.id === selectedMemberId)?.full_name : memberSearchTerm}
+                                                                onChange={(e) => {
+                                                                    setMemberSearchTerm(e.target.value);
+                                                                    setSelectedMemberId(null);
+                                                                    setNewEntryBeneficiary(e.target.value);
+                                                                    setIsMemberDropdownOpen(true);
+                                                                }}
+                                                                onFocus={() => setIsMemberDropdownOpen(true)}
+                                                                className={cn(
+                                                                    "w-full h-8 px-3 bg-slate-50 rounded-xl text-[10px] font-bold outline-none border border-transparent focus:border-marinho/10 transition-all",
+                                                                    selectedMemberId && "text-marinho bg-marinho/5 pl-8"
+                                                                )}
+                                                                placeholder="Buscar membro..."
+                                                            />
+                                                            {selectedMemberId && (
+                                                                <div className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full bg-marinho text-white flex items-center justify-center text-[8px] font-black">
+                                                                    {members.find(m => m.id === selectedMemberId)?.full_name.charAt(0)}
+                                                                </div>
+                                                            )}
+                                                            {selectedMemberId && (
+                                                                <button
+                                                                    onClick={() => { setSelectedMemberId(null); setMemberSearchTerm(''); setNewEntryBeneficiary(''); }}
+                                                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-500"
+                                                                >
+                                                                    <XCircle className="w-3.5 h-3.5" />
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                        <AnimatePresence>
+                                                            {isMemberDropdownOpen && memberSearchTerm && !selectedMemberId && members.filter(m => m.full_name?.toLowerCase().includes(memberSearchTerm.toLowerCase())).length > 0 && (
+                                                                <motion.div
+                                                                    initial={{ opacity: 0, y: 5 }}
+                                                                    animate={{ opacity: 1, y: 0 }}
+                                                                    exit={{ opacity: 0, y: 5 }}
+                                                                    className="absolute top-full left-0 right-0 mt-1 bg-white border border-slate-100 rounded-xl shadow-xl z-50 max-h-48 overflow-y-auto"
+                                                                >
+                                                                    {members
+                                                                        .filter(m => m.full_name?.toLowerCase().includes(memberSearchTerm.toLowerCase()))
+                                                                        .slice(0, 5)
+                                                                        .map(member => (
+                                                                            <div
+                                                                                key={member.id}
+                                                                                onClick={() => {
+                                                                                    setSelectedMemberId(member.id);
+                                                                                    setMemberSearchTerm(member.full_name);
+                                                                                    setIsMemberDropdownOpen(false);
+                                                                                }}
+                                                                                className="px-3 py-2 hover:bg-slate-50 cursor-pointer flex items-center gap-2"
+                                                                            >
+                                                                                <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-[10px] font-black text-slate-500 overflow-hidden">
+                                                                                    {member.photo_url ? <img src={member.photo_url} alt="" className="w-full h-full object-cover" /> : member.full_name.charAt(0)}
+                                                                                </div>
+                                                                                <div>
+                                                                                    <p className="text-[10px] font-bold text-marinho">{member.full_name}</p>
+                                                                                    <p className="text-[8px] text-slate-400">{member.church_role || 'Membro'}</p>
+                                                                                </div>
+                                                                            </div>
+                                                                        ))
+                                                                    }
+                                                                </motion.div>
+                                                            )}
+                                                        </AnimatePresence>
+                                                    </div>
+                                                ) : (
+                                                    <input type="text" value={newEntryBeneficiary} onChange={(e) => setNewEntryBeneficiary(e.target.value)} className="w-full h-8 px-3 bg-slate-50 rounded-xl text-[10px] font-bold outline-none border border-transparent focus:border-marinho/10 transition-all" placeholder="Ex: Fornecedor..." />
+                                                )}
+                                            </div>
+                                            <div className="space-y-0.5">
+                                                <label className="text-[9px] font-black text-marinho/40 uppercase tracking-widest ml-1">Centro de Custo</label>
+                                                <div className="relative">
+                                                    <select value={newEntryCostCenter} onChange={(e) => setNewEntryCostCenter(e.target.value)} className="w-full h-8 pl-3 pr-8 bg-slate-50 rounded-xl text-[10px] font-bold outline-none border border-transparent focus:border-marinho/10 transition-all appearance-none cursor-pointer">
+                                                        <option value="">Geral (Padrão)</option>
+                                                        {costCenters.map(c => (
+                                                            <option key={c.id} value={c.id}>{c.name}</option>
+                                                        ))}
+                                                    </select>
+                                                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-300 pointer-events-none" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div className="space-y-0.5">
+                                                <label className="text-[9px] font-black text-marinho/40 uppercase tracking-widest ml-1">Método</label>
+                                                <div className="relative">
+                                                    <select value={newEntryMethod} onChange={(e) => setNewEntryMethod(e.target.value)} className="w-full h-8 pl-3 pr-8 bg-slate-50 rounded-xl text-[10px] font-bold outline-none border border-transparent focus:border-marinho/10 transition-all appearance-none cursor-pointer">
+                                                        <option value="PIX">PIX</option>
+                                                        <option value="Dinheiro">Dinheiro</option>
+                                                        <option value="Cartão">Cartão</option>
+                                                        <option value="Boleto">Boleto</option>
+                                                    </select>
+                                                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-300 pointer-events-none" />
+                                                </div>
+                                            </div>
+                                            <div className="space-y-0.5">
+                                                <label className="text-[9px] font-black text-marinho/40 uppercase tracking-widest ml-1">Data</label>
+                                                <button onClick={() => setIsCalendarOpen(true)} className="w-full h-8 px-3 bg-slate-50 rounded-xl text-[10px] font-bold text-left flex items-center justify-between group border border-transparent focus:border-marinho/10 transition-all">
+                                                    <span className="text-marinho">{new Date(newEntryDate + 'T12:00:00').toLocaleDateString('pt-BR')}</span>
+                                                    <CalendarDays className="w-3.5 h-3.5 text-slate-400 group-hover:text-marinho transition-colors" />
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-0.5">
+                                            <label className="text-[9px] font-black text-marinho/40 uppercase tracking-widest ml-1">Descrição</label>
+                                            <input type="text" value={newEntryDesc} onChange={(e) => setNewEntryDesc(e.target.value)} className="w-full h-8 px-3 bg-slate-50 rounded-xl text-[10px] font-bold outline-none border border-transparent focus:border-marinho/10 transition-all" placeholder="Ex: Dízimo Mensal, Conta de Luz..." />
+                                        </div>
+
+                                        <AnimatePresence>
+                                            {isCalendarOpen && (
+                                                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="absolute bottom-20 left-1/2 -translate-x-1/2 bg-white rounded-2xl border border-slate-100 shadow-2xl p-2 z-[110]">
+                                                    <PremiumCalendar selectedDate={new Date(newEntryDate + 'T12:00:00')} onChange={(date) => { setNewEntryDate(getLocalDateString(date)); setIsCalendarOpen(false); }} onClose={() => setIsCalendarOpen(false)} />
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
+
+                                        <div className="pt-1 flex gap-2">
+                                            <button onClick={() => setIsNewEntryOpen(false)} className="flex-1 h-10 rounded-xl border border-slate-200 text-marinho text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all">Cancelar</button>
+                                            <button
+                                                onClick={handleSaveTransaction}
+                                                disabled={isSubmitting}
+                                                className={cn(
+                                                    "flex-[2] h-10 rounded-xl text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-marinho/20 transition-all flex items-center justify-center gap-2",
+                                                    submitStatus === 'error' ? "bg-red-500" :
+                                                        submitStatus === 'success' ? "bg-sage" :
+                                                            "bg-marinho hover:bg-marinho/90 active:scale-95"
+                                                )}
+                                            >
+                                                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> :
+                                                    submitStatus === 'success' ? <CheckCircle2 className="w-4 h-4" /> :
+                                                        submitStatus === 'error' ? <XCircle className="w-4 h-4" /> :
+                                                            "Confirmar"
+                                                }
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-
-                                <div className="space-y-1"><label className="text-[9px] font-black text-marinho/40 uppercase tracking-widest ml-1">Descrição</label><input type="text" value={newEntryDesc} onChange={(e) => setNewEntryDesc(e.target.value)} className="w-full h-9 px-3 bg-slate-50 rounded-xl text-[10px] font-bold outline-none border border-transparent focus:border-marinho/10 transition-all" placeholder="Ex: Dízimo Mensal, Conta de Luz..." /></div>
-
-                                <AnimatePresence>
-                                    {isCalendarOpen && (
-                                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="absolute bottom-20 left-1/2 -translate-x-1/2 bg-white rounded-2xl border border-slate-100 shadow-2xl p-2 z-[110]">
-                                            <PremiumCalendar selectedDate={new Date(newEntryDate + 'T12:00:00')} onChange={(date) => { setNewEntryDate(getLocalDateString(date)); setIsCalendarOpen(false); }} onClose={() => setIsCalendarOpen(false)} />
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
-
-                                <div className="pt-2 flex gap-3">
-                                    <button onClick={() => setIsNewEntryOpen(false)} className="flex-1 h-10 rounded-xl border border-slate-200 text-marinho text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all">Cancelar</button>
-                                    <button
-                                        onClick={handleSaveTransaction}
-                                        disabled={isSubmitting}
-                                        className={cn(
-                                            "flex-[2] h-10 rounded-xl text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-marinho/20 transition-all flex items-center justify-center gap-2",
-                                            submitStatus === 'error' ? "bg-red-500" :
-                                                submitStatus === 'success' ? "bg-sage" :
-                                                    "bg-marinho hover:bg-marinho/90 active:scale-95"
-                                        )}
-                                    >
-                                        {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> :
-                                            submitStatus === 'success' ? <CheckCircle2 className="w-4 h-4" /> :
-                                                submitStatus === 'error' ? <XCircle className="w-4 h-4" /> :
-                                                    "Confirmar Lançamento"
-                                        }
-                                    </button>
-                                </div>
+                                ) : (
+                                    <ImportarExtrato
+                                        churchId={churchId || ''}
+                                        onSuccess={() => {
+                                            setIsNewEntryOpen(false);
+                                            loadData(false);
+                                        }}
+                                        onCancel={() => setModalTab('manual')}
+                                    />
+                                )}
                             </div>
                         </motion.div>
                     </div>
