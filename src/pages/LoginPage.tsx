@@ -67,12 +67,10 @@ export function LoginPage() {
                     }
                 } else {
                     // Successful login
-                    console.log('[Login] Login successful. Forcing reload to root...');
                     window.location.href = '/';
                 }
             } else {
                 // CADASTRO
-                console.log('[Login] Starting signup flow...');
                 if (!formData.fullName.trim()) {
                     setError('Nome completo é obrigatório');
                     setLoading(false);
@@ -98,7 +96,6 @@ export function LoginPage() {
                         setError('Este email já está cadastrado. Faça login.');
                     } else {
                         setError('Erro ao criar conta. Tente novamente.');
-                        console.error('Signup error:', error);
                     }
                 } else {
                     setSuccess('Conta criada com sucesso! Redirecionando...');
@@ -110,7 +107,6 @@ export function LoginPage() {
             }
         } catch (err) {
             setError('Erro inesperado. Tente novamente.');
-            console.error('Auth error:', err);
         } finally {
             setLoading(false);
         }

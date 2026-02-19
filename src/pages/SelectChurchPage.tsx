@@ -13,7 +13,7 @@ interface Church {
     distance?: number;
 }
 
-const SUPER_ADMIN_EMAIL = 'dp6274720@gmail.com';
+
 
 export function SelectChurchPage() {
     const { user, profile, refreshProfile } = useAuth(); // Profile adicionado aqui
@@ -175,16 +175,6 @@ export function SelectChurchPage() {
                         Pular
                     </button>
 
-                    {/* Botão Secreto Super Admin - Verificação Dupla */}
-                    {(user?.email === SUPER_ADMIN_EMAIL || profile?.email === SUPER_ADMIN_EMAIL) && (
-                        <button
-                            onClick={() => navigate('/super-admin')}
-                            className="absolute top-6 right-6 p-2 bg-slate-50 hover:bg-[#1e1b4b] text-slate-400 hover:text-[#d4af37] rounded-xl transition-all shadow-sm group z-30 border border-slate-100"
-                            title="Painel Supremo"
-                        >
-                            <Shield className="w-5 h-5 fill-current opacity-20 group-hover:opacity-100 transition-opacity" />
-                        </button>
-                    )}
                     <div className="mx-auto w-24 h-24 mb-4 flex items-center justify-center">
                         <img
                             src="/logo.png"

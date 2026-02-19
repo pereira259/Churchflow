@@ -215,7 +215,7 @@ export function MembrosPage() {
                     </div>
 
                     {/* Integrated Stats Section */}
-                    <div className="hidden xl:flex items-center gap-8 border-x border-marinho/5 px-8 mx-4 relative z-10">
+                    <div className="hidden lg:flex items-center gap-4 xl:gap-8 border-x border-marinho/5 px-4 xl:px-8 mx-2 xl:mx-4 relative z-10">
                         {[
                             { label: 'Total Pessoas', value: stats.total, color: 'text-marinho' },
                             { label: 'Membros Ativos', value: stats.members, color: 'text-sage' },
