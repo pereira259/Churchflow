@@ -74,20 +74,47 @@ export function GruposPage() {
     const [isSearchingLocation, setIsSearchingLocation] = useState(false);
 
     const handleLocationSearch = async () => {
-        if (!locationSearchTerm || locationSearchTerm.length < 3) return;
+        if (!locationSearchTerm || locationSearchTerm.length < 3) {
+            setLocationSearchResults([]);
+            return;
+        }
+
         setIsSearchingLocation(true);
         try {
-            // Limited to Brazil for better relevance, looking for streets, neighborhoods, etc.
+            // Check if it's a CEP (format: 12345-678 or 12345678)
+            const cepRegex = /^[0-9]{5}-?[0-9]{3}$/;
+            const isCep = cepRegex.test(locationSearchTerm);
+
+            if (isCep) {
+                const cep = locationSearchTerm.replace(/\D/g, '');
+                const viaCepResponse = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+                const viaCepData = await viaCepResponse.json();
+
+                if (!viaCepData.erro) {
+                    // If CEP found, search specifically for this address in Nominatim
+                    // Construct a precise query
+                    const addressQuery = `${viaCepData.logradouro}, ${viaCepData.bairro}, ${viaCepData.localidade} - ${viaCepData.uf}, Brasil`;
+
+                    const nominatimResponse = await fetch(
+                        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressQuery)}&addressdetails=1&limit=5`
+                    );
+                    const nominatimData = await nominatimResponse.json();
+
+                    if (nominatimData && nominatimData.length > 0) {
+                        setLocationSearchResults(nominatimData);
+                        return; // Found via CEP -> Nominatim flow
+                    }
+                }
+            }
+
+            // Fallback to standard Nominatim search (or if not a CEP)
             let viewboxParam = '';
             if (churchInfo) {
-                // Bias search to ~50km around the church
                 const delta = 0.5;
                 const minLng = churchInfo.lng - delta;
                 const maxLng = churchInfo.lng + delta;
                 const minLat = churchInfo.lat - delta;
                 const maxLat = churchInfo.lat + delta;
-                // viewbox=<x1>,<y1>,<x2>,<y2> (left,top,right,bottom order is common but Nominatim is flexible with bounded=0)
-                // We use bounded=0 to prefer but not restrict
                 viewboxParam = `&viewbox=${minLng},${maxLat},${maxLng},${minLat}&bounded=0`;
             }
 
@@ -96,6 +123,7 @@ export function GruposPage() {
             );
             const data = await response.json();
             setLocationSearchResults(data);
+
         } catch (error) {
             console.error("Erro na busca de local:", error);
             showToast("Erro ao buscar localização", "error");
@@ -573,8 +601,11 @@ export function GruposPage() {
 
     const handleSaveGroup = async (e: React.FormEvent) => {
         e.preventDefault();
-        const churchId = (window as any).profile?.church_id; // Placeholder
-        if (!churchId) return; // Guard clause
+        const churchId = profile?.church_id;
+        if (!churchId) {
+            showToast("Erro: Identificação da igreja não encontrada. Tente recarregar.", "error");
+            return;
+        }
         setIsSaving(true);
 
         try {
@@ -1194,9 +1225,13 @@ export function GruposPage() {
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                                 <input
                                     type="text"
-                                    placeholder="Buscar rua, bairro ou estabelecimento..."
+                                    placeholder="Buscar por CEP, rua, bairro ou estabelecimento..."
                                     value={locationSearchTerm}
-                                    onChange={(e) => setLocationSearchTerm(e.target.value)}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setLocationSearchTerm(val);
+                                        if (!val) setLocationSearchResults([]);
+                                    }}
                                     onKeyDown={(e) => e.key === 'Enter' && handleLocationSearch()}
                                     className="w-full h-10 pl-10 pr-4 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-marinho/20 focus:border-marinho outline-none"
                                 />

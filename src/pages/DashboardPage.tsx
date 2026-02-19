@@ -309,7 +309,7 @@ export function DashboardPage() {
                     </div>
 
                     {/* Integrated KPI Summary */}
-                    <div className="hidden lg:flex items-center gap-6 border-x border-marinho/5 px-6 mx-4 relative z-10">
+                    <div className="hidden xl:flex items-center gap-10 border-x border-marinho/5 px-10 mx-6 relative z-10">
                         {[
                             { label: 'Membros', val: memberCount, color: 'text-marinho', href: '/membros' },
                             { label: 'Visitantes', val: visitorCount, color: 'text-gold', href: '/visitantes' },

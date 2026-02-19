@@ -345,7 +345,7 @@ export function MemberAgendaPage() {
                     </div>
 
                     {/* Integrated Stats Section - Compacted */}
-                    <div className="hidden lg:flex items-center gap-4 border-x border-marinho/5 px-4 mx-2 relative z-10">
+                    <div className="hidden xl:flex items-center gap-4 border-x border-marinho/5 px-4 mx-2 relative z-10">
                         {[
                             { label: 'Minhas Escalas', value: mySchedules.filter(s => s.status === 'confirmado').length, color: 'text-marinho' },
                             { label: 'Eventos Inscritos', value: myRegistrations.length, color: 'text-sage' },

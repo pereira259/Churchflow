@@ -172,7 +172,7 @@ export function VisitantesPage() {
                     </div>
 
                     {/* Integrated Stats Section */}
-                    <div className="hidden lg:flex items-center gap-6 xl:gap-10 border-x border-marinho/5 px-6 xl:px-10 mx-4 xl:mx-6 relative z-10">
+                    <div className="hidden xl:flex items-center gap-10 border-x border-marinho/5 px-10 mx-6 relative z-10">
                         {[
                             { label: 'Total Visitantes', value: visitantes.length, color: 'text-marinho' },
                             {
