@@ -186,13 +186,17 @@ export default function App() {
                             {/* ÁREA DO MEMBRO (Portal Mobile-First) */}
                             <Route path="/membro" element={
                                 <ProtectedRoute>
-                                    <MemberHomePage />
+                                    <DashboardLayout>
+                                        <MemberHomePage />
+                                    </DashboardLayout>
                                 </ProtectedRoute>
                             } />
                             <Route path="/membro/agenda" element={
                                 <ProtectedRoute>
                                     <ProfileGate>
-                                        <MemberAgendaPage />
+                                        <DashboardLayout>
+                                            <MemberAgendaPage />
+                                        </DashboardLayout>
                                     </ProfileGate>
                                 </ProtectedRoute>
                             } />
@@ -206,14 +210,18 @@ export default function App() {
                             <Route path="/membro/checkin" element={
                                 <ProtectedRoute>
                                     <ProfileGate>
-                                        <MemberCheckinPage />
+                                        <DashboardLayout>
+                                            <MemberCheckinPage />
+                                        </DashboardLayout>
                                     </ProfileGate>
                                 </ProtectedRoute>
                             } />
                             <Route path="/membro/estudos" element={
                                 <ProtectedRoute>
                                     <ProfileGate>
-                                        <MemberStudiesPage />
+                                        <DashboardLayout>
+                                            <MemberStudiesPage />
+                                        </DashboardLayout>
                                     </ProfileGate>
                                 </ProtectedRoute>
                             } />
