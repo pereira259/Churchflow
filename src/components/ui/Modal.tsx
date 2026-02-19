@@ -16,7 +16,7 @@ export function Modal({ isOpen, onClose, title, children, hideHeader = false, he
     return (
         <AnimatePresence>
             {isOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+                <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
                     {/* Backdrop with high blur */}
                     <motion.div
                         initial={{ opacity: 0 }}
@@ -32,7 +32,7 @@ export function Modal({ isOpen, onClose, title, children, hideHeader = false, he
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, y: 30 }}
                         transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                        className="relative w-full max-w-3xl max-h-[95vh] bg-white/80 backdrop-blur-2xl rounded-4xl shadow-glass-xl border border-white/60 flex flex-col overflow-hidden texture-engraving"
+                        className="relative w-full max-w-3xl max-h-[85vh] bg-white/80 backdrop-blur-2xl rounded-4xl shadow-glass-xl border border-white/60 flex flex-col overflow-hidden texture-engraving sm:my-8"
                     >
                         <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-marinho via-sage to-gold z-50" />
 

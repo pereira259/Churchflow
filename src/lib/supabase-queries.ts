@@ -787,6 +787,8 @@ export interface Transaction {
     beneficiary?: string; // Optional: Who paid or who received
     member_id?: string; // Link to member if applicable
     status?: string;
+    external_id?: string; // ID único da transação bancária
+    origem?: 'manual' | 'extrato_importado'; // Origem do lançamento
     created_at: string;
 }
 
