@@ -252,14 +252,15 @@ export function ManagementDrawer({
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
-                        className="fixed inset-0 bg-[#0f172a]/40 backdrop-blur-sm z-[150]"
+                        className="fixed inset-0 bg-[#0f172a]/40 backdrop-blur-sm z-[9990]"
                     />
                     <motion.div
                         initial={{ x: '100%', opacity: 0.5 }}
                         animate={{ x: 0, opacity: 1 }}
                         exit={{ x: '100%', opacity: 0.5 }}
                         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                        className="fixed top-4 right-4 bottom-auto max-h-[calc(100vh-2rem)] w-full max-w-sm bg-white/95 backdrop-blur-2xl z-[160] rounded-[2.5rem] shadow-[-20px_0_50px_rgba(15,23,42,0.1)] border border-white/40 overflow-hidden flex flex-col"
+                        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                        className="fixed top-4 right-4 bottom-auto max-h-[calc(100vh-2rem)] w-full max-w-sm bg-white/95 backdrop-blur-2xl z-[9999] rounded-[2.5rem] shadow-[-20px_0_50px_rgba(15,23,42,0.1)] border border-white/40 overflow-hidden flex flex-col"
                     >
                         {/* Header */}
                         <div className="p-6 pb-4 relative overflow-hidden shrink-0">
@@ -283,7 +284,7 @@ export function ManagementDrawer({
                         </div>
 
                         {/* Content */}
-                        <div className="flex-1 overflow-y-auto px-6 py-2 pb-8 scrollbar-hide">
+                        <div className="flex-1 overflow-y-auto px-6 py-2 pb-8 custom-scrollbar">
                             <AnimatePresence mode="wait">
                                 {drawerScreen === 'menu' ? (
                                     <motion.div
