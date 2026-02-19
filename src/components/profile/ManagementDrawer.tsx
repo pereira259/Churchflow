@@ -259,10 +259,10 @@ export function ManagementDrawer({
                         animate={{ x: 0, opacity: 1 }}
                         exit={{ x: '100%', opacity: 0.5 }}
                         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                        className="fixed top-4 bottom-4 right-4 w-full max-w-sm bg-white/95 backdrop-blur-2xl z-[160] rounded-[2.5rem] shadow-[-20px_0_50px_rgba(15,23,42,0.1)] border border-white/40 overflow-hidden flex flex-col"
+                        className="fixed top-4 right-4 bottom-auto max-h-[calc(100vh-2rem)] w-full max-w-sm bg-white/95 backdrop-blur-2xl z-[160] rounded-[2.5rem] shadow-[-20px_0_50px_rgba(15,23,42,0.1)] border border-white/40 overflow-hidden flex flex-col"
                     >
                         {/* Header */}
-                        <div className="p-8 pb-6 relative overflow-hidden shrink-0">
+                        <div className="p-6 pb-4 relative overflow-hidden shrink-0">
                             <div className="absolute top-0 right-0 w-40 h-40 bg-[#d4af37]/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
                             <div className="flex items-center justify-between relative z-10">
                                 {drawerScreen !== 'menu' ? (
