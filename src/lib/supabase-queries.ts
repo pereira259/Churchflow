@@ -789,7 +789,23 @@ export interface Transaction {
     status?: string;
     external_id?: string; // ID único da transação bancária
     origem?: 'manual' | 'extrato_importado'; // Origem do lançamento
+    conta_id?: string; // ID da conta do plano de contas
+    subconta_id?: string; // ID da subconta do plano de contas
+    conta?: { nome: string }; // Join relation
+    subconta?: { nome: string }; // Join relation
     created_at: string;
+}
+
+export interface PlanoDeConta {
+    id: string;
+    igreja_id: string;
+    nome: string;
+    tipo: 'entrada' | 'saida';
+    parent_id: string | null;
+    ordem: number;
+    ativo: boolean;
+    created_at: string;
+    filhos?: PlanoDeConta[]; // Para uso na UI de árvore
 }
 
 export interface TransactionFilter {
@@ -798,6 +814,7 @@ export interface TransactionFilter {
     endDate?: string;
     type?: string;
     cost_center_id?: string;
+    conta_id?: string;
     limit?: number;
     page?: number;
     search?: string;
@@ -814,12 +831,13 @@ export async function getTransactions(filters: TransactionFilter) {
 
     let query = supabase
         .from('transactions')
-        .select('*, cost_centers(name), members(id, full_name, photo_url)', { count: 'exact' });
+        .select('*, cost_centers(name), members(id, full_name, photo_url), conta:plano_de_contas!conta_id(nome), subconta:plano_de_contas!subconta_id(nome)', { count: 'exact' });
 
     query = query.eq('church_id', filters.churchId);
 
     if (filters.type) query = query.eq('type', filters.type);
     if (filters.cost_center_id) query = query.eq('cost_center_id', filters.cost_center_id);
+    if (filters.conta_id) query = query.or(`conta_id.eq.${filters.conta_id},subconta_id.eq.${filters.conta_id}`);
 
     if (filters.search) {
         query = query.or(`description.ilike.%${filters.search}%,beneficiary.ilike.%${filters.search}%`);

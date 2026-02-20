@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../lib/auth';
 import { supabase } from '../lib/supabase';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Search, ChevronRight, Church as ChurchIcon, Loader2, Shield } from 'lucide-react';
+import { MapPin, Search, ChevronRight, Church as ChurchIcon, Loader2 } from 'lucide-react';
 
 interface Church {
     id: string;
@@ -16,7 +16,7 @@ interface Church {
 
 
 export function SelectChurchPage() {
-    const { user, profile, refreshProfile } = useAuth(); // Profile adicionado aqui
+    const { user, refreshProfile } = useAuth(); // Profile adicionado aqui
     const navigate = useNavigate();
 
     const [loading, setLoading] = useState(false);

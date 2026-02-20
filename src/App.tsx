@@ -31,7 +31,7 @@ import { EventosPage } from './pages/admin/EventosPage';
 import { ComunicacaoPage } from './pages/lider/ComunicacaoPage';
 
 // Pages - Financeiro (Tesouraria)
-
+import { PlanoDeContasPage } from './pages/financeiro/PlanoDeContasPage';
 
 // Pages - Membro
 import { MemberHomePage } from './pages/member/MemberHomePage';
@@ -146,6 +146,12 @@ export default function App() {
                                 <Route path="/financeiro" element={
                                     <ProtectedRoute requiredRoles={['admin', 'pastor_chefe', 'financeiro']}>
                                         <FinanceiroPage />
+                                    </ProtectedRoute>
+                                } />
+
+                                <Route path="/financeiro/plano-de-contas" element={
+                                    <ProtectedRoute requiredRoles={['admin', 'pastor_chefe', 'financeiro']}>
+                                        <PlanoDeContasPage />
                                     </ProtectedRoute>
                                 } />
 

@@ -7,6 +7,8 @@ export interface ParsedTransaction {
     type: 'entrada' | 'saida';
     externalId: string;
     categoria: string;
+    contaId?: string;
+    subcontaId?: string | null;
 }
 
 const CATEGORIAS = [

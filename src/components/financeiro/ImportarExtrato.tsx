@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Upload, CheckCircle2, AlertCircle, Loader2, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
 import { cn } from '../../lib/utils';
@@ -6,6 +6,89 @@ import { parseOFX, parseCSV, ParsedTransaction } from '../../utils/finance-parse
 import { AnimatedValue } from '@/components/ui/AnimatedValue';
 import { supabase } from '../../lib/supabase';
 import { useDropzone } from 'react-dropzone';
+
+async function criarConta({
+    igrejaId, nome, tipo, parentId
+}: {
+    igrejaId: string;
+    nome: string;
+    tipo: 'entrada' | 'saida';
+    parentId: string | null;
+}) {
+    const { data, error } = await supabase
+        .from('plano_de_contas')
+        .insert({ igreja_id: igrejaId, nome, tipo, parent_id: parentId })
+        .select()
+        .single();
+
+    if (error) throw error;
+    return data;
+}
+
+async function sincronizarCategorias(
+    transacoes: ParsedTransaction[],
+    igrejaId: string
+): Promise<Map<string, { contaId: string; subcontaId: string | null }>> {
+    try {
+        const { data: contasRaiz } = await supabase
+            .from('plano_de_contas')
+            .select('*')
+            .eq('igreja_id', igrejaId)
+            .is('parent_id', null);
+
+        const contaReceitas = contasRaiz?.find((c: any) => c.nome === 'Receitas' || c.nome === 'Entradas' || c.nome === 'Receita' || c.nome === 'Dízimos' || c.nome === 'Ofertas');
+        const contaDespesas = contasRaiz?.find((c: any) => c.nome === 'Despesas' || c.nome === 'Saídas' || c.nome === 'Despesa');
+
+        const raizEntrada = contaReceitas || await criarConta({
+            igrejaId, nome: 'Receitas', tipo: 'entrada', parentId: null
+        });
+        const raizSaida = contaDespesas || await criarConta({
+            igrejaId, nome: 'Despesas', tipo: 'saida', parentId: null
+        });
+
+        const { data: subcontasExistentes } = await supabase
+            .from('plano_de_contas')
+            .select('*')
+            .eq('igreja_id', igrejaId)
+            .not('parent_id', 'is', null);
+
+        const mapaSubcontas = new Map<string, any>(
+            subcontasExistentes?.map((s: any) => [s.nome.toLowerCase().trim(), s]) || []
+        );
+
+        const resultado = new Map<string, { contaId: string; subcontaId: string | null }>();
+        const categoriasUnicas = [...new Set(transacoes.map(t => t.categoria).filter(Boolean))];
+
+        for (const categoria of categoriasUnicas) {
+            const transacaoExemplo = transacoes.find(t => t.categoria === categoria);
+            if (!transacaoExemplo) continue;
+
+            const tipo = transacaoExemplo.type;
+            const contaPai = tipo === 'entrada' ? raizEntrada : raizSaida;
+            const chave = categoria.toLowerCase().trim();
+
+            let subconta = mapaSubcontas.get(chave);
+            if (!subconta) {
+                subconta = await criarConta({
+                    igrejaId,
+                    nome: categoria,
+                    tipo,
+                    parentId: contaPai.id,
+                });
+                mapaSubcontas.set(chave, subconta);
+            }
+
+            resultado.set(categoria, {
+                contaId: contaPai.id,
+                subcontaId: subconta.id,
+            });
+        }
+        return resultado;
+    } catch (err) {
+        console.error("Erro na sincronização de categorias:", err);
+        return new Map();
+    }
+}
 
 interface ImportarExtratoProps {
     churchId: string;
@@ -21,6 +104,7 @@ export function ImportarExtrato({ churchId, onSuccess, onCancel }: ImportarExtra
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [contasCriadas, setContasCriadas] = useState<{ categoria: string, subcontaId: string | null }[]>([]);
 
     const onDrop = async (acceptedFiles: File[]) => {
         const file = acceptedFiles[0];
@@ -47,7 +131,7 @@ export function ImportarExtrato({ churchId, onSuccess, onCancel }: ImportarExtra
 
             // Check for duplicates
             const { data: existing } = await supabase
-                .from('financial_transactions')
+                .from('transactions')
                 .select('external_id')
                 .eq('church_id', churchId)
                 .not('external_id', 'is', null);
@@ -55,10 +139,23 @@ export function ImportarExtrato({ churchId, onSuccess, onCancel }: ImportarExtra
             const ids = new Set<string>(existing?.map((t: any) => t.external_id) || []);
             setExistingExternalIds(ids);
 
-            // Filter duplicates for the main list, but keep them for stats if needed
-            // Actually, let's keep all and mark duplicates visually
+            // Sincroniza categorias com o plano de contas e cria automaticamente
+            const mapaContas = await sincronizarCategorias(parsed, churchId);
 
-            setTransactions(parsed);
+            const transacoesEnriquecidas = parsed.map(t => ({
+                ...t,
+                contaId: mapaContas.get(t.categoria)?.contaId || undefined,
+                subcontaId: mapaContas.get(t.categoria)?.subcontaId || undefined,
+            }));
+
+            // Coleta contas criadas para mostrar no preview
+            const contasNomes = [...mapaContas.entries()].map(([cat, info]) => ({
+                categoria: cat,
+                subcontaId: info.subcontaId
+            }));
+
+            setContasCriadas(contasNomes);
+            setTransactions(transacoesEnriquecidas);
 
             setStep('preview');
         } catch (err) {
@@ -84,32 +181,46 @@ export function ImportarExtrato({ churchId, onSuccess, onCancel }: ImportarExtra
             const newTransactions = transactions.filter(t => !existingExternalIds.has(t.externalId || ''));
 
             if (newTransactions.length === 0) {
+                console.warn('[IMPORT] Nenhuma transação nova para importar');
                 setError('Todas as transações já foram importadas.');
                 setIsSubmitting(false);
                 return;
             }
 
-            const { error: insertError } = await supabase
-                .from('financial_transactions')
-                .insert(newTransactions.map(t => ({
-                    church_id: churchId,
-                    type: t.amount >= 0 ? 'in' : 'out',
-                    amount: Math.abs(t.amount),
-                    description: t.description,
-                    date: t.date.toISOString().split('T')[0],
-                    payment_method: 'Transferência',
-                    category: t.categoria || 'Outros',
-                    status: 'completed',
-                    external_id: t.externalId
-                })));
+            console.log('[IMPORT] Iniciando importação de', newTransactions.length, 'transações');
 
-            if (insertError) throw insertError;
+            const payload = newTransactions.map(t => ({
+                church_id: churchId,
+                type: t.amount >= 0 ? 'in' : 'out',
+                amount: Math.abs(t.amount),
+                description: t.description,
+                date: t.date.toISOString().split('T')[0],
+                payment_method: 'Transferência',
+                category: t.categoria || 'Outros',
+                status: 'completed',
+                external_id: t.externalId,
+                conta_id: t.contaId || null,
+                subconta_id: t.subcontaId || null
+            }));
 
+            console.log('[IMPORT] Payload para inserir:', payload);
+
+            const { data, error: insertError } = await supabase
+                .from('transactions')
+                .insert(payload)
+                .select();
+
+            if (insertError) {
+                console.error('[IMPORT] Erro Supabase:', insertError);
+                throw insertError;
+            }
+
+            console.log('[IMPORT] Sucesso! Inseridas:', data?.length);
             setStep('success');
             setTimeout(onSuccess, 1500);
         } catch (err: any) {
-            console.error('Error importing:', err);
-            setError('Erro ao salvar transações. Tente novamente.');
+            console.error('[IMPORT] Falha na importação:', err);
+            setError(`Erro ao importar: ${err.message || 'Erro desconhecido'}`);
         } finally {
             setIsSubmitting(false);
         }
@@ -156,7 +267,7 @@ export function ImportarExtrato({ churchId, onSuccess, onCancel }: ImportarExtra
         const dupCount = transactions.length - newCount;
 
         return (
-            <div className="flex flex-col h-full bg-slate-50/50">
+            <div className="flex flex-col h-full min-h-0 bg-slate-50/50">
                 <div className="px-4 py-3 bg-white border-b border-slate-100 flex items-center justify-between shrink-0">
                     <div>
                         <h3 className="text-xs font-bold text-marinho uppercase tracking-wider">
@@ -172,7 +283,32 @@ export function ImportarExtrato({ churchId, onSuccess, onCancel }: ImportarExtra
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto custom-scrollbar p-2">
+                {contasCriadas.length > 0 && (
+                    <div className="mx-4 mt-3 mb-1 bg-green-50 border border-green-200 rounded-xl p-3 flex gap-3 items-start shrink-0">
+                        <span className="text-lg leading-none">✨</span>
+                        <div>
+                            <p className="font-bold text-green-800 text-[11px] mb-1">
+                                {contasCriadas.length} {contasCriadas.length === 1 ? 'conta criada' : 'contas criadas'} automaticamente no Plano de Contas
+                            </p>
+                            <div className="flex flex-wrap gap-1.5 mt-1.5">
+                                {contasCriadas.map(c => (
+                                    <span key={c.categoria} className="bg-green-100 text-green-800 text-[9px] px-2 py-0.5 rounded-full font-bold">
+                                        {c.categoria}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {error && (
+                    <div className="mx-4 mt-1 mb-1 p-3 bg-red-50 border border-red-200 text-red-600 rounded-xl text-[10px] flex items-center gap-2 shrink-0">
+                        <AlertCircle className="w-4 h-4 shrink-0" />
+                        <span className="font-bold">{error}</span>
+                    </div>
+                )}
+
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-2 mt-1">
                     <div className="space-y-1">
                         {transactions.map((t, index) => {
                             const isDuplicate = existingExternalIds.has(t.externalId || '');
