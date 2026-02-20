@@ -31,7 +31,7 @@ import { EventosPage } from './pages/admin/EventosPage';
 import { ComunicacaoPage } from './pages/lider/ComunicacaoPage';
 
 // Pages - Financeiro (Tesouraria)
-import { PlanoDeContasPage } from './pages/financeiro/PlanoDeContasPage';
+import { PlanoDeContasPage } from './pages/financeiro/PlanoDeContasPage'; // trigger_redeploy_final
 
 // Pages - Membro
 import { MemberHomePage } from './pages/member/MemberHomePage';
