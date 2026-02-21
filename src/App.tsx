@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 import { AuthProvider, ProtectedRoute, useAuth, getRedirectPath } from './lib/auth';
 import { DashboardDataProvider } from './lib/dashboard-data';
@@ -47,6 +48,8 @@ import { MemberStudiesPage } from './pages/member/MemberStudiesPage';
 function RootRedirect() {
     const { user, profile, loading } = useAuth();
     const hasHash = window.location.hash.includes('access_token=');
+    const isRecovery = window.location.hash.includes('type=recovery');
+    if (isRecovery) return <Navigate to={`/reset-password${window.location.hash}`} replace />;
 
     if (hasHash || loading) {
         return (
@@ -96,6 +99,7 @@ export default function App() {
                             <Routes>
                                 {/* Auth - Público */}
                                 <Route path="/login" element={<SwapAuthPage />} />
+                                <Route path="/reset-password" element={<ResetPasswordPage />} />
                                 <Route path="/entrar-na-igreja" element={<SelectChurchPage />} />
                                 <Route path="/criar-igreja" element={<CreateChurchPage />} />
                                 <Route path="/super-admin" element={<SuperAdminPage />} />
