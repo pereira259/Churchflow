@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
 export default function ResetPasswordPage() {
-    const [password, setPassword] = useState('')
-    const [confirm, setConfirm] = useState('')
+    const [showPassword, setShowPassword] = useState(false)
+    const [showConfirm, setShowConfirm] = useState(false)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
     const [success, setSuccess] = useState(false)
@@ -31,7 +31,11 @@ export default function ResetPasswordPage() {
         setLoading(true)
         const { error } = await supabase.auth.updateUser({ password })
         if (error) {
-            setError('Erro ao redefinir. Tente novamente.')
+            if (error.message.includes('different')) {
+                setError('A nova senha deve ser diferente da atual.')
+            } else {
+                setError('Erro ao redefinir. Tente novamente.')
+            }
         } else {
             setSuccess(true)
             setTimeout(() => navigate('/login'), 3000)
@@ -55,20 +59,34 @@ export default function ResetPasswordPage() {
                     </div>
                 ) : (
                     <>
-                        <input
-                            type="password"
-                            placeholder="Nova senha"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="w-full border rounded-xl px-4 py-3 mb-3 text-sm outline-none focus:ring-2 focus:ring-[#1e1b4b]"
-                        />
-                        <input
-                            type="password"
-                            placeholder="Confirmar nova senha"
-                            value={confirm}
-                            onChange={(e) => setConfirm(e.target.value)}
-                            className="w-full border rounded-xl px-4 py-3 mb-4 text-sm outline-none focus:ring-2 focus:ring-[#1e1b4b]"
-                        />
+                        <div className="relative mb-3">
+                            <input
+                                type={showPassword ? 'text' : 'password'}
+                                placeholder="Nova senha"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                className="w-full border rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#1e1b4b]"
+                            />
+                            <button type="button" onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-3 text-gray-400 text-sm">
+                                {showPassword ? 'Ocultar' : 'Ver'}
+                            </button>
+                        </div>
+
+                        <div className="relative mb-4">
+                            <input
+                                type={showConfirm ? 'text' : 'password'}
+                                placeholder="Confirmar nova senha"
+                                value={confirm}
+                                onChange={(e) => setConfirm(e.target.value)}
+                                className="w-full border rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#1e1b4b]"
+                            />
+                            <button type="button" onClick={() => setShowConfirm(!showConfirm)}
+                                className="absolute right-3 top-3 text-gray-400 text-sm">
+                                {showConfirm ? 'Ocultar' : 'Ver'}
+                            </button>
+                        </div>
+
                         {error && (
                             <p className="text-red-500 text-sm mb-3">{error}</p>
                         )}
