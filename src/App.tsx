@@ -20,6 +20,8 @@ import { DashboardPage } from './pages/DashboardPage';
 import { MembrosPage } from './pages/MembrosPage';
 import { FinanceiroPage } from './pages/FinanceiroPage';
 import { VisitantesPage } from './pages/VisitantesPage';
+import MFASetupPage from './pages/MFASetupPage';
+import MFAVerifyPage from './pages/MFAVerifyPage';
 import { GruposPage } from './pages/GruposPage';
 import { MinisteriosPage } from './pages/MinisteriosPage';
 
@@ -105,6 +107,8 @@ export default function App() {
                                 <Route path="/super-admin" element={<SuperAdminPage />} />
                                 <Route path="/aguardando-aprovacao" element={<AwaitingApprovalPage />} />
                                 <Route path="/convite/:inviteId" element={<InviteLandingPage />} />
+                                <Route path="/mfa-setup" element={<MFASetupPage />} />
+                                <Route path="/mfa-verify" element={<MFAVerifyPage />} />
 
                                 {/* Admin/Pastor - Dashboard Completo */}
                                 <Route path="/" element={<RootRedirect />} />

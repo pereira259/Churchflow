@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
 export default function ResetPasswordPage() {
+    const [password, setPassword] = useState('')
+    const [confirm, setConfirm] = useState('')
     const [showPassword, setShowPassword] = useState(false)
     const [showConfirm, setShowConfirm] = useState(false)
     const [loading, setLoading] = useState(false)

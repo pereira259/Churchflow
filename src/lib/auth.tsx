@@ -576,6 +576,21 @@ export function useAuth() {
     return context;
 }
 
+// Roles que exigem MFA obrigatoriamente
+export const MFA_REQUIRED_ROLES: UserRole[] = ['pastor_chefe', 'admin', 'financeiro'];
+
+// Helper para verificar se o dispositivo está "lembrado"
+export function isDeviceRemembered(userId: string): boolean {
+    const stored = localStorage.getItem(`mfa_remember_${userId}`);
+    if (!stored) return false;
+    try {
+        const { expires } = JSON.parse(stored);
+        return new Date().getTime() < expires;
+    } catch {
+        return false;
+    }
+}
+
 // Componente de proteção de rota
 interface ProtectedRouteProps {
     children: ReactNode;
@@ -592,21 +607,34 @@ export function ProtectedRoute({ children, requiredRoles, fallback }: ProtectedR
 
     if (!loading && !user && !hasHashToken) {
         if (fallback) return <>{fallback}</>;
-        // Usar replace para não sujar o histórico
         return <Navigate to="/login" replace />;
     }
 
-    // Durante loading, renderiza children (que terão seus próprios skeletons)
-    // Isso elimina o "waterfall" de loading.
-    // Também renderiza se temos user (mesmo durante loading)
+    // Lógica de MFA OBRIGATÓRIA para roles sensíveis
+    if (!loading && user && profile && MFA_REQUIRED_ROLES.includes(profile.role)) {
+        const isRemembered = isDeviceRemembered(user.id);
 
-    // Verificação de igreja removida deste ponto para permitir que o usuário "pule" a seleção.
-    // O redirecionamento é feito agora apenas no fluxo inicial de login na LoginPage.
+        // Se NÃO está lembrado, precisamos checar MFA
+        if (!isRemembered) {
+            // Verificamos se estamos nas páginas de MFA para evitar loop
+            const isMFAPage = window.location.pathname === '/mfa-setup' || window.location.pathname === '/mfa-verify';
 
+            if (!isMFAPage) {
+                // Checa se tem fatores enrollados (isso é assíncrono, mas o session.user.factors pode ajudar)
+                // O Supabase injeta fatores no user object se disponíveis
+                const factors = (user as any).factors || [];
+                const hasTOTP = factors.some((f: any) => f.factor_type === 'totp' && f.status === 'verified');
+
+                if (hasTOTP) {
+                    return <Navigate to="/mfa-verify" replace />;
+                } else {
+                    return <Navigate to="/mfa-setup" replace />;
+                }
+            }
+        }
+    }
 
     if (requiredRoles && requiredRoles.length > 0 && profile && !hasPermission(requiredRoles)) {
-        // Se o usuário está logado mas não tem permissão (ex: membro tentando acessar admin),
-        // redireciona para a área dele em vez de mostrar erro.
         const userRole = profile?.role || 'membro';
         if (userRole === 'membro' || userRole === 'visitante') {
             return <Navigate to="/membro" replace />;
