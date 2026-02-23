@@ -20,8 +20,6 @@ import { DashboardPage } from './pages/DashboardPage';
 import { MembrosPage } from './pages/MembrosPage';
 import { FinanceiroPage } from './pages/FinanceiroPage';
 import { VisitantesPage } from './pages/VisitantesPage';
-import MFASetupPage from './pages/MFASetupPage';
-import MFAVerifyPage from './pages/MFAVerifyPage';
 import { GruposPage } from './pages/GruposPage';
 import { MinisteriosPage } from './pages/MinisteriosPage';
 
@@ -43,7 +41,6 @@ import { MemberProfilePage } from './pages/member/MemberProfilePage';
 import { BiblePage } from './pages/BiblePage';
 import { MemberCheckinPage } from './pages/member/MemberCheckinPage';
 import { AwaitingApprovalPage } from './pages/AwaitingApprovalPage';
-import { MemberStudiesPage } from './pages/member/MemberStudiesPage';
 
 // Componente para cuidar do redirecionamento na raiz (/)
 // sem perder o hash de autenticação do Supabase/Google
@@ -107,8 +104,10 @@ export default function App() {
                                 <Route path="/super-admin" element={<SuperAdminPage />} />
                                 <Route path="/aguardando-aprovacao" element={<AwaitingApprovalPage />} />
                                 <Route path="/convite/:inviteId" element={<InviteLandingPage />} />
-                                <Route path="/mfa-setup" element={<MFASetupPage />} />
-                                <Route path="/mfa-verify" element={<MFAVerifyPage />} />
+
+                                {/* MFA Purged - Redirect safety net for cached browsers */}
+                                <Route path="/mfa-setup" element={<Navigate to="/jornal" replace />} />
+                                <Route path="/mfa-verify" element={<Navigate to="/jornal" replace />} />
 
                                 {/* Admin/Pastor - Dashboard Completo */}
                                 <Route path="/" element={<RootRedirect />} />
@@ -243,7 +242,7 @@ export default function App() {
                                     <ProtectedRoute>
                                         <ProfileGate>
                                             <DashboardLayout>
-                                                <MemberStudiesPage />
+                                                <MemberCheckinPage />
                                             </DashboardLayout>
                                         </ProfileGate>
                                     </ProtectedRoute>

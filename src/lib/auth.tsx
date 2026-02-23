@@ -41,13 +41,6 @@ interface AuthContextType {
     isMembro: boolean;
     hasPermission: (requiredRoles: UserRole[]) => boolean;
     refreshProfile: () => Promise<void>;
-    mfa: {
-        enroll: () => Promise<{ data: any; error: Error | null }>;
-        verify: (factorId: string, code: string, challengeId?: string) => Promise<{ data: any; error: Error | null }>;
-        check: () => Promise<boolean>;
-        list: () => Promise<{ data: any[]; error: Error | null }>;
-        unenroll: (factorId: string) => Promise<{ error: Error | null }>;
-    };
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -469,57 +462,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { error };
     };
 
-    // MFA: Enrollment (TOTP)
-    const enrollMFA = async () => {
-        if (!supabase) return { error: new Error('Supabase não configurado') };
-        return await supabase.auth.mfa.enroll({ factorType: 'totp' });
-    };
-
-    // MFA: Challenge & Verify
-    const verifyMFA = async (factorId: string, code: string, challengeId?: string) => {
-        if (!supabase) return { error: new Error('Supabase não configurado') };
-
-        // Se não tiver challengeId, cria um novo
-        if (!challengeId) {
-            const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({ factorId });
-            if (challengeError) return { error: challengeError };
-            challengeId = challengeData.id;
-        }
-
-        const { data, error } = await supabase.auth.mfa.verify({
-            factorId,
-            challengeId,
-            code,
-        });
-
-        if (data && !error) {
-            await refreshProfile(); // Atualiza perfil/sessão se necessário
-        }
-
-        return { data, error };
-    };
-
-    // MFA: Check Level
-    const checkMFA = async () => {
-        if (!supabase) return false;
-        const { data, error } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
-        if (error || !data) return false;
-        return data.currentLevel === 'aal2';
-    };
-
-    // MFA: List Factors
-    const listMFAFactors = async () => {
-        if (!supabase) return { data: [], error: new Error('Supabase não configurado') };
-        const { data, error } = await supabase.auth.mfa.listFactors();
-        return { data: data?.all || [], error };
-    };
-
-    // MFA: Unenroll
-    const unenrollMFA = async (factorId: string) => {
-        if (!supabase) return { error: new Error('Supabase não configurado') };
-        return await supabase.auth.mfa.unenroll({ factorId });
-    };
-
     // Helpers de permissão (baseados no profile real)
     const role = profile?.role;
     const isAdmin = role === 'admin' || role === 'super_admin';
@@ -550,14 +492,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isFinanceiro,
         isMembro,
         hasPermission,
-        refreshProfile,
-        mfa: {
-            enroll: enrollMFA,
-            verify: verifyMFA,
-            check: checkMFA,
-            list: listMFAFactors,
-            unenroll: unenrollMFA
-        }
+        refreshProfile
     };
 
     return (
@@ -576,22 +511,6 @@ export function useAuth() {
     return context;
 }
 
-// Roles que exigem MFA obrigatoriamente
-export const MFA_REQUIRED_ROLES: UserRole[] = ['pastor_chefe', 'admin', 'financeiro'];
-
-// Helper para verificar se o dispositivo está "lembrado"
-export function isDeviceRemembered(userId: string): boolean {
-    const stored = localStorage.getItem(`mfa_remember_${userId}`);
-    if (!stored) return false;
-    try {
-        const { expires } = JSON.parse(stored);
-        return new Date().getTime() < expires;
-    } catch {
-        return false;
-    }
-}
-
-// Componente de proteção de rota
 interface ProtectedRouteProps {
     children: ReactNode;
     requiredRoles?: UserRole[];
@@ -608,30 +527,6 @@ export function ProtectedRoute({ children, requiredRoles, fallback }: ProtectedR
     if (!loading && !user && !hasHashToken) {
         if (fallback) return <>{fallback}</>;
         return <Navigate to="/login" replace />;
-    }
-
-    // Lógica de MFA OBRIGATÓRIA para roles sensíveis
-    if (!loading && user && profile && MFA_REQUIRED_ROLES.includes(profile.role)) {
-        const isRemembered = isDeviceRemembered(user.id);
-
-        // Se NÃO está lembrado, precisamos checar MFA
-        if (!isRemembered) {
-            // Verificamos se estamos nas páginas de MFA para evitar loop
-            const isMFAPage = window.location.pathname === '/mfa-setup' || window.location.pathname === '/mfa-verify';
-
-            if (!isMFAPage) {
-                // Checa se tem fatores enrollados (isso é assíncrono, mas o session.user.factors pode ajudar)
-                // O Supabase injeta fatores no user object se disponíveis
-                const factors = (user as any).factors || [];
-                const hasTOTP = factors.some((f: any) => f.factor_type === 'totp' && f.status === 'verified');
-
-                if (hasTOTP) {
-                    return <Navigate to="/mfa-verify" replace />;
-                } else {
-                    return <Navigate to="/mfa-setup" replace />;
-                }
-            }
-        }
     }
 
     if (requiredRoles && requiredRoles.length > 0 && profile && !hasPermission(requiredRoles)) {
