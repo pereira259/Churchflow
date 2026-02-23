@@ -94,19 +94,35 @@ export function MemberProfilePage() {
         setToast({ visible: true, message, type });
     };
 
-    // Hydration guard + cleanup
+    // Hydration guard + cleanup + optimistic cache
     useEffect(() => {
         setHasMounted(true);
         isMountedRef.current = true;
+
+        // Optimistic hydration from localStorage cache
+        try {
+            const cached = localStorage.getItem('profile-page-cache');
+            if (cached) {
+                const data = JSON.parse(cached);
+                const age = Date.now() - (data._ts || 0);
+                // Use cache if less than 5 minutes old
+                if (age < 300000) {
+                    if (data.memberData) setMemberData(data.memberData);
+                    if (data.churchName) setChurchName(data.churchName);
+                    if (data.scales) setScales(data.scales);
+                    if (data.groups) setGroups(data.groups);
+                    if (data.hasCheckin !== undefined) setHasCheckin(data.hasCheckin);
+                    setLoading(false); // Skip skeleton!
+                    console.log('[PROFILE] ⚡ Instant load from cache');
+                }
+            }
+        } catch (e) { /* ignore cache errors */ }
+
         return () => { isMountedRef.current = false; };
     }, []);
 
     useEffect(() => {
         if (profile?.id) {
-            // Only trigger loading if we truly have no data
-            if (!memberData && scales.length === 0) {
-                setLoading(true);
-            }
             fetchData();
         }
     }, [profile?.id]);
@@ -117,7 +133,11 @@ export function MemberProfilePage() {
     const fetchData = async () => {
         if (!supabase || !profile) return;
 
-        // Legacy admin restore removed to prevent super_admin conflicts
+        let _member: any = null;
+        let _scales: any[] = [];
+        let _groups: any[] = [];
+        let _churchName = '—';
+        let _hasCheckin = false;
 
         try {
             // Fetch member info
@@ -126,6 +146,8 @@ export function MemberProfilePage() {
                 .select('*, groups(name, category)')
                 .eq('user_id', profile.id)
                 .maybeSingle();
+
+            _member = member;
 
             if (member) {
                 setMemberData(member);
@@ -139,15 +161,17 @@ export function MemberProfilePage() {
                     .order('date', { ascending: true })
                     .limit(3);
 
-                setScales(scalesData || []);
+                _scales = scalesData || [];
+                setScales(_scales);
 
                 // If member has small group linked directly
                 if (member.groups) {
-                    setGroups([{
+                    _groups = [{
                         id: member.small_group_id,
                         name: member.groups.name,
                         category: member.groups.category || 'Pequeno Grupo'
-                    }]);
+                    }];
+                    setGroups(_groups);
                 } else {
                     setGroups([]);
                 }
@@ -159,7 +183,8 @@ export function MemberProfilePage() {
                     .from('event_checkins')
                     .select('*', { count: 'exact', head: true })
                     .eq('member_id', member.id);
-                setHasCheckin((checkinCount || 0) > 0);
+                _hasCheckin = (checkinCount || 0) > 0;
+                setHasCheckin(_hasCheckin);
             }
 
             // Fetch church name & settings
@@ -172,16 +197,30 @@ export function MemberProfilePage() {
 
                 if (churchError) {
                     console.error('❌ Church Fetch Error:', churchError);
-                    setChurchName(`Erro: ${churchError.code || 'Desconhecido'}`);
+                    _churchName = `Erro: ${churchError.code || 'Desconhecido'}`;
                 } else if (church) {
-                    setChurchName(church.name);
+                    _churchName = church.name;
                 }
+                setChurchName(_churchName);
             }
 
         } catch (err) {
             console.error('Error fetching profile data:', err);
         } finally {
-            if (isMountedRef.current) setLoading(false);
+            if (isMountedRef.current) {
+                // Cache for instant load on next F5
+                try {
+                    localStorage.setItem('profile-page-cache', JSON.stringify({
+                        memberData: _member,
+                        churchName: _churchName,
+                        scales: _scales,
+                        groups: _groups,
+                        hasCheckin: _hasCheckin,
+                        _ts: Date.now()
+                    }));
+                } catch (e) { /* ignore */ }
+                setLoading(false);
+            }
         }
     };
 
