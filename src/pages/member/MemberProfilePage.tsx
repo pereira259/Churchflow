@@ -9,7 +9,7 @@ import { ManagementDrawer } from '@/components/profile/ManagementDrawer';
 import { useTutorial } from '@/contexts/TutorialContext';
 import { useAuth } from '@/lib/auth';
 import { useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Modal } from '@/components/ui/Modal';
 import { ImageCropperModal } from '@/components/ui/ImageCropperModal';
@@ -53,6 +53,8 @@ export function MemberProfilePage() {
     const [groups, setGroups] = useState<any[]>([]);
     const [hasCheckin, setHasCheckin] = useState(false);
     const [loading, setLoading] = useState(true);
+    const isMountedRef = useRef(true);
+    const [hasMounted, setHasMounted] = useState(false);
 
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
@@ -91,6 +93,13 @@ export function MemberProfilePage() {
     const showToast = (message: string, type: ToastType = 'success') => {
         setToast({ visible: true, message, type });
     };
+
+    // Hydration guard + cleanup
+    useEffect(() => {
+        setHasMounted(true);
+        isMountedRef.current = true;
+        return () => { isMountedRef.current = false; };
+    }, []);
 
     useEffect(() => {
         if (profile?.id) {
@@ -172,7 +181,7 @@ export function MemberProfilePage() {
         } catch (err) {
             console.error('Error fetching profile data:', err);
         } finally {
-            setLoading(false);
+            if (isMountedRef.current) setLoading(false);
         }
     };
 
@@ -349,7 +358,8 @@ export function MemberProfilePage() {
         navigate('/login');
     };
 
-    if (loading || useAuth().loading) {
+    // Only block on local data loading, not auth loading (which has a long timeout)
+    if (!hasMounted || loading) {
         return (
             <MemberLayout>
                 <div className="h-full flex flex-col overflow-hidden animate-pulse">

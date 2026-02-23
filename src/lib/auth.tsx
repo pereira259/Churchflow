@@ -179,13 +179,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         let isMounted = true;
 
-        // Timeout de segurança - restaurado para 8s para conexões lentas
+        // Timeout de segurança - 3s é suficiente para conexões lentas
         const timeout = setTimeout(() => {
             if (isMounted && loading) {
                 console.warn('[AUTH] Session check timeout - force revealing UI');
                 setLoading(false);
             }
-        }, 8000);
+        }, 3000);
 
         if (!supabase) {
             console.error('[AUTH] Supabase client is missing!');
