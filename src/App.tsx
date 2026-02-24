@@ -242,7 +242,7 @@ export default function App() {
                                     <ProtectedRoute>
                                         <ProfileGate>
                                             <DashboardLayout>
-                                                <MemberCheckinPage />
+                                                <BiblePage />
                                             </DashboardLayout>
                                         </ProfileGate>
                                     </ProtectedRoute>
