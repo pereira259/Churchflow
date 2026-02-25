@@ -521,8 +521,42 @@ export async function getEvents(churchId?: string, startDate?: string) {
         query = query.gte('start_date', startDate);
     }
 
-    const { data, error } = await query.limit(500);
-    return { data: data as Event[] || [], error };
+    const { data: rawData, error } = await query.limit(500);
+
+    // HIPER CONEXÃO: Auto-fill missing images by borrowing from other events with same title
+    let data = rawData as Event[] || [];
+    if (!error && data.length > 0) {
+        const missingImageEvents = data.filter(e => !e.image_url);
+        if (missingImageEvents.length > 0) {
+            const { data: imagesData } = await supabase
+                .from('events')
+                .select('title, image_url')
+                .eq('church_id', churchId)
+                .not('image_url', 'is', null)
+                .neq('image_url', '');
+
+            if (imagesData && imagesData.length > 0) {
+                const imageMap = new Map();
+                imagesData.forEach((item: { title: string, image_url: string }) => {
+                    if (item.title && !imageMap.has(item.title.toLowerCase()) && item.image_url) {
+                        imageMap.set(item.title.toLowerCase(), item.image_url);
+                    }
+                });
+
+                data = data.map(event => {
+                    if (!event.image_url && event.title && imageMap.has(event.title.toLowerCase())) {
+                        const borrowedImage = imageMap.get(event.title.toLowerCase());
+                        // Auto-heal the database silently in the background
+                        supabase.from('events').update({ image_url: borrowedImage }).eq('id', event.id).then().catch(() => { });
+                        return { ...event, image_url: borrowedImage };
+                    }
+                    return event;
+                });
+            }
+        }
+    }
+
+    return { data, error };
 }
 
 // Optimized fetch: Only future events
@@ -542,8 +576,42 @@ export async function getEventsAfter(churchId: string, date: Date) {
 
     query = query.eq('church_id', churchId);
 
-    const { data, error } = await query.limit(20);
-    return { data: data as Event[] || [], error };
+    const { data: rawData, error } = await query.limit(20);
+
+    // HIPER CONEXÃO: Auto-fill missing images by borrowing from other events with same title
+    let data = rawData as Event[] || [];
+    if (!error && data.length > 0) {
+        const missingImageEvents = data.filter(e => !e.image_url);
+        if (missingImageEvents.length > 0) {
+            const { data: imagesData } = await supabase
+                .from('events')
+                .select('title, image_url')
+                .eq('church_id', churchId)
+                .not('image_url', 'is', null)
+                .neq('image_url', '');
+
+            if (imagesData && imagesData.length > 0) {
+                const imageMap = new Map();
+                imagesData.forEach((item: { title: string, image_url: string }) => {
+                    if (item.title && !imageMap.has(item.title.toLowerCase()) && item.image_url) {
+                        imageMap.set(item.title.toLowerCase(), item.image_url);
+                    }
+                });
+
+                data = data.map(event => {
+                    if (!event.image_url && event.title && imageMap.has(event.title.toLowerCase())) {
+                        const borrowedImage = imageMap.get(event.title.toLowerCase());
+                        // Auto-heal the database silently in the background
+                        supabase.from('events').update({ image_url: borrowedImage }).eq('id', event.id).then().catch(() => { });
+                        return { ...event, image_url: borrowedImage };
+                    }
+                    return event;
+                });
+            }
+        }
+    }
+
+    return { data, error };
 }
 
 export async function createEvent(event: Omit<Event, 'id' | 'created_at'>) {
@@ -644,6 +712,52 @@ export async function getMemberRegistrations(userId: string, churchId: string) {
             events (*)
         `)
         .eq('member_id', memberData.id)
+        .order('created_at', { ascending: false });
+
+    return { data: data as any[] || [], error };
+}
+
+// --- Optimized direct-by-id functions (avoid duplicate member lookup) ---
+
+export async function getMemberIdByUserId(userId: string, churchId: string): Promise<string | null> {
+    if (!supabase) return null;
+
+    const { data } = await supabase
+        .from('members')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('church_id', churchId)
+        .single();
+
+    return data?.id || null;
+}
+
+export async function getMemberSchedulesById(memberId: string) {
+    if (!supabase) return { data: [], error: null };
+
+    const { data, error } = await supabase
+        .from('schedules')
+        .select(`
+            *,
+            events (title, start_date, event_type),
+            members (full_name, photo_url)
+        `)
+        .eq('member_id', memberId)
+        .order('created_at', { ascending: false });
+
+    return { data: data as any[] || [], error };
+}
+
+export async function getMemberRegistrationsById(memberId: string) {
+    if (!supabase) return { data: [], error: null };
+
+    const { data, error } = await supabase
+        .from('event_registrations')
+        .select(`
+            *,
+            events (*)
+        `)
+        .eq('member_id', memberId)
         .order('created_at', { ascending: false });
 
     return { data: data as any[] || [], error };
@@ -1336,7 +1450,7 @@ export async function getNews(churchId?: string) {
         }
     }
 
-    const { data, error } = await query;
+    const { data, error } = await query.limit(30);
     return { data: data as News[] || [], error };
 }
 

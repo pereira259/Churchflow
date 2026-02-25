@@ -18,6 +18,7 @@ import {
   Book
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { SmartImage } from '../ui/SmartImage';
 import { useAuth, UserRole } from '@/lib/auth';
 import { useState, useEffect } from 'react';
 import { useRef } from 'react';
@@ -46,7 +47,7 @@ const navigationGroups: NavGroup[] = [
     name: 'Central',
     icon: Newspaper,
     items: [
-      { name: 'Jornal', href: '/membro', icon: Newspaper, roles: ['admin', 'pastor_chefe', 'pastor_lider', 'lider', 'financeiro', 'membro', 'visitante'] },
+      { name: 'Jornal', href: '/jornal', icon: Newspaper, roles: ['admin', 'pastor_chefe', 'pastor_lider', 'lider', 'financeiro', 'membro', 'visitante'] },
       { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, roles: ['admin', 'pastor_chefe'] },
       { name: 'Estudo', href: '/biblia', icon: Book, roles: ['admin', 'pastor_chefe', 'pastor_lider', 'lider', 'financeiro', 'membro', 'visitante'] },
     ]
@@ -249,7 +250,7 @@ export function Sidebar() {
         <div id="user-profile-btn" className="mt-auto mb-4 relative group/user">
           <button className="h-10 w-10 rounded-full bg-[#1e1b4b] flex items-center justify-center text-[#d4af37] font-display font-bold text-xs shadow-lg border border-white/10 hover:scale-105 transition-transform overflow-hidden" onClick={() => navigate('/perfil')}>
             {profile?.avatar_url ? (
-              <img src={profile.avatar_url} alt={profile.full_name} className="h-full w-full object-cover" />
+              <SmartImage src={profile.avatar_url} alt={profile.full_name} className="h-full w-full object-cover" />
             ) : (
               getInitials(profile?.full_name)
             )}
@@ -414,7 +415,7 @@ export function TopNav() {
           </div>
           <div className="h-9 w-9 rounded-full bg-[#1e1b4b] flex items-center justify-center text-[#d4af37] font-display font-bold text-xs shadow-md border-2 border-white ring-1 ring-[#1e1b4b]/5 overflow-hidden">
             {profile?.avatar_url ? (
-              <img src={profile.avatar_url} alt={profile.full_name} className="h-full w-full object-cover" />
+              <SmartImage src={profile.avatar_url} alt={profile.full_name} className="h-full w-full object-cover" />
             ) : (
               getInitials(profile?.full_name)
             )}

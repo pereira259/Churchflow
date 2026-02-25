@@ -559,21 +559,18 @@ export function ProtectedRoute({ children, requiredRoles, fallback }: ProtectedR
 
 // Helper para determinar rotas de redirecionamento baseadas em cargo
 export function getRedirectPath(role?: UserRole): string {
-    if (!role) return '/membro';
+    if (!role) return '/jornal';
 
     switch (role) {
         case 'super_admin':
         case 'admin':
         case 'pastor_chefe':
         case 'pastor_lider':
-            return '/jornal'; // Painel principal de notícias/avisos
         case 'lider':
-            return '/lider/comunicacao'; // Rota mais comum para líderes
         case 'financeiro':
-            return '/financeiro';
         case 'membro':
         case 'visitante':
         default:
-            return '/membro';
+            return '/jornal'; // O Jornal é a central unificada para todos
     }
 }

@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useAuth } from './auth';
-import { getEventsAfter, Event, getNews, News, getMemberSchedulesByUserId, getMemberRegistrations, getChurchSettings } from './supabase-queries';
-import { getCachedFull, setCached } from './cache-manager';
+import { getEventsAfter, Event, getNews, News, getMemberIdByUserId, getMemberSchedulesById, getMemberRegistrationsById, getChurchSettings } from './supabase-queries';
+import { getCached, getCachedFull, setCached } from './cache-manager';
 
 
 
@@ -101,16 +101,26 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
             const cacheKey = `dashboard-data-v5-${effectiveChurchId}`;
 
             // --- 2. CACHE HYDRATION (Instant Load) ---
-            // Try to load from cache BEFORE network request
+            // Try SYNC cache first (localStorage), then fall back to async (IndexedDB)
             if (showLoading) {
-                const cached = await getCachedFull<CachedDashboardData>(cacheKey);
-                if (cached) {
-                    if (cached.events?.length > 0) setEvents(cached.events);
-                    if (cached.news?.length > 0) setNews(cached.news);
-                    if (cached.churchSettings) setChurchSettings(cached.churchSettings);
-                    // We found cache! Cancel loading skeleton immediately
+                // Fast path: sync localStorage (no await needed)
+                const syncCached = getCached<CachedDashboardData>(cacheKey);
+                if (syncCached) {
+                    if (syncCached.events?.length > 0) setEvents(syncCached.events);
+                    if (syncCached.news?.length > 0) setNews(syncCached.news);
+                    if (syncCached.churchSettings) setChurchSettings(syncCached.churchSettings);
                     showLoading = false;
-                    setIsLoading(false); // <--- CRITICAL FIX: Unlock the UI immediately
+                    setIsLoading(false);
+                } else {
+                    // Slow path: async IndexedDB (has images, more complete)
+                    const asyncCached = await getCachedFull<CachedDashboardData>(cacheKey);
+                    if (asyncCached) {
+                        if (asyncCached.events?.length > 0) setEvents(asyncCached.events);
+                        if (asyncCached.news?.length > 0) setNews(asyncCached.news);
+                        if (asyncCached.churchSettings) setChurchSettings(asyncCached.churchSettings);
+                        showLoading = false;
+                        setIsLoading(false);
+                    }
                 }
             }
 
@@ -128,13 +138,17 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
                 getChurchSettings(effectiveChurchId)
             ] as const;
 
-            // Private data promises (conditionally added)
-            let privatePromise: Promise<[any, any]> | null = null;
+            // Private data: lookup member_id ONCE, then fetch both in parallel
+            let privatePromise: Promise<[any, any] | null> | null = null;
             if (profile?.id && profile?.church_id) {
-                privatePromise = Promise.all([
-                    getMemberSchedulesByUserId(profile.id, profile.church_id),
-                    getMemberRegistrations(profile.id, profile.church_id)
-                ]);
+                privatePromise = getMemberIdByUserId(profile.id, profile.church_id)
+                    .then(memberId => {
+                        if (!memberId) return null;
+                        return Promise.all([
+                            getMemberSchedulesById(memberId),
+                            getMemberRegistrationsById(memberId)
+                        ]);
+                    });
             }
 
             // EXECUTE ALL IN PARALLEL
@@ -182,10 +196,6 @@ export function DashboardDataProvider({ children }: { children: ReactNode }) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [fetchAllData]);
 
-    // Fetch data when profile becomes available (Login)
-    useEffect(() => {
-        fetchAllData();
-    }, [fetchAllData]);
 
     return (
         <DashboardDataContext.Provider value={{

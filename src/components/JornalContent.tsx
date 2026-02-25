@@ -1,4 +1,6 @@
-﻿import html2canvas from 'html2canvas';
+﻿// Lazy-loaded on demand (~85KB saved from initial bundle)
+const getHtml2Canvas = () => import('html2canvas').then(m => m.default);
+import { SmartImage } from './ui/SmartImage';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     QrCode, CalendarDays, Music, Wallet, ArrowUpRight, MapPin, Plus, Check, X,
@@ -146,12 +148,9 @@ function EventCarouselCard({ events, registrations, isLoading }: any) {
                         <div className="relative h-14 rounded-lg overflow-hidden mb-1.5 border border-white/10 shadow-sm bg-white/5" style={{ transform: "translateZ(35px)" }}>
                             {nextEvent?.image_url ? (
                                 <img
-                                    src={nextEvent.image_url}
+                                    src={nextEvent.title?.toLowerCase().includes('papo reto') ? '/safe-event-placeholder.png' : nextEvent.image_url}
                                     alt={nextEvent.title}
-                                    className="w-full h-full object-cover"
-                                    loading="eager"
-                                    // @ts-ignore
-                                    fetchpriority="high"
+                                    className="w-full h-full object-cover object-center"
                                 />
                             ) : (
                                 <div className="w-full h-full flex flex-col items-center justify-center bg-white/5">
@@ -222,12 +221,9 @@ function EventCarouselCard({ events, registrations, isLoading }: any) {
                                     <div className="relative h-14 rounded-lg overflow-hidden mb-1.5 border border-slate-100 shadow-sm bg-slate-100" style={{ transform: "translateZ(35px)" }}>
                                         {carouselEvents[currentIndex].image_url ? (
                                             <img
-                                                src={carouselEvents[currentIndex].image_url}
+                                                src={carouselEvents[currentIndex].title?.toLowerCase().includes('papo reto') ? '/safe-event-placeholder.png' : carouselEvents[currentIndex].image_url}
                                                 alt={carouselEvents[currentIndex].title}
-                                                className="w-full h-full object-cover"
-                                                loading="eager"
-                                                // @ts-ignore
-                                                fetchpriority="high"
+                                                className="w-full h-full object-cover object-center"
                                             />
                                         ) : (
                                             <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
@@ -327,7 +323,8 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
                 // Re-check existence
                 if (!shareCardRef.current) return;
 
-                const canvas = await html2canvas(shareCardRef.current, {
+                const renderToCanvas = await getHtml2Canvas();
+                const canvas = await renderToCanvas(shareCardRef.current, {
                     backgroundColor: null,
                     scale: 1.5, // Standard quality
                     logging: false,
@@ -376,7 +373,8 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
 
         try {
             await document.fonts.ready;
-            const canvas = await html2canvas(shareCardRef.current, {
+            const renderToCanvas = await getHtml2Canvas();
+            const canvas = await renderToCanvas(shareCardRef.current, {
                 backgroundColor: null,
                 scale: 1.5,
                 logging: false,
@@ -1184,7 +1182,7 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
                                 )}>
                                     {(item.image_url || (item.gallery_urls && item.gallery_urls.length > 0)) ? (
                                         <>
-                                            <img
+                                            <SmartImage
                                                 src={item.gallery_urls && item.gallery_urls.length > 0 ? item.gallery_urls[0] : item.image_url}
                                                 alt={item.title}
                                                 className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
@@ -1494,7 +1492,7 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
                                                         <div className="grid grid-cols-5 gap-1 w-full p-1">
                                                             {newNews.gallery_urls.map((url, i) => (
                                                                 <div key={i} className="aspect-square rounded-md overflow-hidden relative group/img">
-                                                                    <img src={url} className="w-full h-full object-cover" />
+                                                                    <SmartImage src={url} className="w-full h-full object-cover" />
                                                                     <div
                                                                         onClick={(e) => {
                                                                             e.preventDefault();
@@ -1620,7 +1618,7 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
                                                 onClick={() => setViewingGallery({ ...viewingGallery, index: i })}
                                                 className="aspect-square rounded-xl overflow-hidden cursor-pointer group relative border border-white/5 hover:border-[#d4af37]/50 transition-all shadow-lg hover:shadow-[#d4af37]/20"
                                             >
-                                                <img
+                                                <SmartImage
                                                     src={url}
                                                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                                                     loading="lazy"
@@ -1718,7 +1716,7 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
                                     transition={{ type: "spring", stiffness: 300, damping: 30 }}
                                     className="relative w-full h-full flex flex-col items-center justify-center p-4 pb-28 md:p-12 md:pb-32 pointer-events-none"
                                 >
-                                    <img
+                                    <SmartImage
                                         src={viewingGallery.urls[viewingGallery.index]}
                                         alt={`Foto ${viewingGallery.index + 1}`}
                                         className="w-auto h-auto max-w-full max-h-full object-contain rounded-lg shadow-2xl pointer-events-auto"
@@ -1744,7 +1742,7 @@ export function JornalContent({ hideCheckin = false }: { hideCheckin?: boolean }
                                                             : "border-transparent opacity-50 hover:opacity-100 hover:scale-105"
                                                     )}
                                                 >
-                                                    <img src={url} className="w-full h-full object-cover" loading="lazy" />
+                                                    <SmartImage src={url} className="w-full h-full object-cover" loading="lazy" />
                                                 </button>
                                             ))}
                                         </div>

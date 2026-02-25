@@ -100,6 +100,25 @@ export function setCached<T>(key: string, data: T, ttl: number = 300000): void {
     try {
         // Always strip large fields for SessionStorage to be safe and fast
         const strippedData = stripLargeFields(data);
+
+        // ZERO-DELAY CACHE: Re-inject top 4 event images for Above-The-Fold instant hydration
+        if ((data as any).events && Array.isArray((data as any).events) && strippedData.events) {
+            for (let i = 0; i < Math.min(4, (data as any).events.length); i++) {
+                if ((data as any).events[i].image_url) {
+                    strippedData.events[i].image_url = (data as any).events[i].image_url;
+                }
+            }
+        }
+
+        // Also keep top 2 news images
+        if ((data as any).news && Array.isArray((data as any).news) && strippedData.news) {
+            for (let i = 0; i < Math.min(2, (data as any).news.length); i++) {
+                if ((data as any).news[i].image_url) {
+                    strippedData.news[i].image_url = (data as any).news[i].image_url;
+                }
+            }
+        }
+
         const strippedEntry: CacheEntry<T> = {
             data: strippedData,
             timestamp,

@@ -1,3 +1,4 @@
+import { SmartImage } from '../../components/ui/SmartImage';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Search,
@@ -574,7 +575,7 @@ export function EventosPage() {
                     <div className="h-32 w-full relative overflow-hidden shrink-0">
                         {event.image_url ? (
                             <>
-                                <img src={event.image_url} alt={event.title} className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700" />
+                                <SmartImage src={event.image_url} alt={event.title} className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700" />
                                 <div className="absolute inset-0 bg-gradient-to-t from-marinho/80 via-transparent to-transparent" />
                             </>
                         ) : (

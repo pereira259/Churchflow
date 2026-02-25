@@ -1,3 +1,4 @@
+import { SmartImage } from '../../components/ui/SmartImage';
 import { MemberLayout } from '@/components/layout/MemberLayout';
 
 import { motion } from 'framer-motion';
@@ -47,14 +48,14 @@ export function MemberProfilePage() {
     // Let's do separate calls. First, update the hook usage.
     const navigate = useNavigate();
 
-    const [memberData, setMemberData] = useState<any>(null);
-    const [churchName, setChurchName] = useState('—');
-    const [scales, setScales] = useState<any[]>([]);
-    const [groups, setGroups] = useState<any[]>([]);
-    const [hasCheckin, setHasCheckin] = useState(false);
-    const [loading, setLoading] = useState(true);
+    const initialCache = (() => { try { const cached = localStorage.getItem('profile-page-cache'); if (cached) { const data = JSON.parse(cached); if (Date.now() - (data._ts || 0) < 300000) return data; } } catch(e) {} return null; })();
+    const [memberData, setMemberData] = useState<any>(initialCache?.memberData || null);
+    const [churchName, setChurchName] = useState(initialCache?.churchName || '—');
+    const [scales, setScales] = useState<any[]>(initialCache?.scales || []);
+    const [groups, setGroups] = useState<any[]>(initialCache?.groups || []);
+    const [hasCheckin, setHasCheckin] = useState(initialCache?.hasCheckin || false);
+    const [loading, setLoading] = useState(!initialCache?.memberData);
     const isMountedRef = useRef(true);
-    const [hasMounted, setHasMounted] = useState(false);
 
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
@@ -96,7 +97,6 @@ export function MemberProfilePage() {
 
     // Hydration guard + cleanup + optimistic cache
     useEffect(() => {
-        setHasMounted(true);
         isMountedRef.current = true;
 
         // Optimistic hydration from localStorage cache
@@ -106,7 +106,7 @@ export function MemberProfilePage() {
                 const data = JSON.parse(cached);
                 const age = Date.now() - (data._ts || 0);
                 // Use cache if less than 5 minutes old
-                if (age < 300000) {
+                if (true) { // Aggressive hydration
                     if (data.memberData) setMemberData(data.memberData);
                     if (data.churchName) setChurchName(data.churchName);
                     if (data.scales) setScales(data.scales);
@@ -398,7 +398,7 @@ export function MemberProfilePage() {
     };
 
     // Only block on local data loading, not auth loading (which has a long timeout)
-    if (!hasMounted || loading) {
+    if (loading) {
         return (
             <MemberLayout>
                 <div className="h-full flex flex-col overflow-hidden animate-pulse">
@@ -556,7 +556,7 @@ export function MemberProfilePage() {
                                 <div className="relative mb-3 md:mb-4 mt-1 md:mt-2">
                                     <div className="w-20 h-20 md:w-28 md:h-28 rounded-full border-[3px] md:border-[4px] border-white shadow-2xl bg-gradient-to-br from-[#d4af37] to-[#b39025] flex items-center justify-center text-[#1e1b4b] font-display text-2xl md:text-4xl font-bold italic relative overflow-hidden ring-1 ring-slate-100/50">
                                         {userProfile.avatar_url ? (
-                                            <img src={userProfile.avatar_url} alt={userProfile.full_name} className="w-full h-full object-cover" />
+                                            <SmartImage src={userProfile.avatar_url} alt={userProfile.full_name} className="w-full h-full object-cover" />
                                         ) : (
                                             getInitials(userProfile.full_name)
                                         )}
