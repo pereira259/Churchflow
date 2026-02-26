@@ -100,27 +100,27 @@ export function FormPanel({ mode }: FormPanelProps) {
                 className="w-full max-w-[240px] space-y-2"
             >
                 {/* Header */}
-                <div className="text-center space-y-0.5">
-                    <div className="md:hidden flex justify-center mb-1">
-                        <ChurchFlowLogo className="w-6 h-6 text-[#1e1b4b]" />
+                <div className="text-center space-y-1 mb-2">
+                    <div className="md:hidden flex justify-center mb-2">
+                        <ChurchFlowLogo className="w-8 h-8 text-[#1e1b4b]" />
                     </div>
-                    <h1 className="font-display text-xl font-bold text-[#1e1b4b]">
+                    <h1 className="font-display text-2xl font-bold tracking-tight text-[#1e1b4b]">
                         {isLogin ? 'Entrar' : 'Criar Conta'}
                     </h1>
-                    <p className="text-slate-500 text-[10px]">
-                        {isLogin ? 'Bem-vindo de volta!' : 'Preencha seus dados'}
+                    <p className="text-slate-500 text-xs font-medium">
+                        {isLogin ? 'Acesse sua plataforma ChurchFlow' : 'Preencha seus dados'}
                     </p>
                 </div>
 
                 {/* Social Login */}
                 <SocialButtons isLoading={isLoading} onGoogleClick={handleGoogleSignIn} />
 
-                <div className="relative my-2">
+                <div className="relative my-4">
                     <div className="absolute inset-0 flex items-center">
                         <div className="w-full border-t border-slate-200"></div>
                     </div>
                     <div className="relative flex justify-center text-[10px]">
-                        <span className="px-2 bg-white text-slate-400 font-bold uppercase tracking-wider scale-90">
+                        <span className="px-3 bg-white text-slate-400 font-bold uppercase tracking-widest scale-90">
                             {isLogin ? 'ou' : 'ou email'}
                         </span>
                     </div>
@@ -160,7 +160,7 @@ export function FormPanel({ mode }: FormPanelProps) {
                                 placeholder="Nome completo"
                                 value={formData.fullName}
                                 onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                                className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#1e1b4b] focus:ring-1 focus:ring-[#1e1b4b]/10 transition-all font-medium"
+                                className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-offset-1 focus:ring-[#1e1b4b]/20 focus:border-[#1e1b4b]/50 transition-all font-medium"
                                 required={!isLogin}
                             />
                         </div>
@@ -173,7 +173,7 @@ export function FormPanel({ mode }: FormPanelProps) {
                             placeholder="Email"
                             value={formData.email}
                             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                            className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#1e1b4b] focus:ring-1 focus:ring-[#1e1b4b]/10 transition-all font-medium"
+                            className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-offset-1 focus:ring-[#1e1b4b]/20 focus:border-[#1e1b4b]/50 transition-all font-medium"
                             required
                         />
                     </div>
@@ -185,7 +185,7 @@ export function FormPanel({ mode }: FormPanelProps) {
                             placeholder="Senha"
                             value={formData.password}
                             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                            className="w-full pl-9 pr-9 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-[#1e1b4b] focus:ring-1 focus:ring-[#1e1b4b]/10 transition-all font-medium"
+                            className="w-full pl-9 pr-9 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-offset-1 focus:ring-[#1e1b4b]/20 focus:border-[#1e1b4b]/50 transition-all font-medium"
                             required
                             minLength={6}
                         />
@@ -230,14 +230,17 @@ export function FormPanel({ mode }: FormPanelProps) {
                     <button
                         type="submit"
                         disabled={isLoading}
-                        className="w-full py-2 bg-[#1e1b4b] hover:bg-[#1e1b4b]/90 text-white font-bold rounded-lg flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-[#1e1b4b]/20 mt-2 group text-xs"
+                        className="relative w-full py-2.5 overflow-hidden bg-[#1e1b4b] hover:bg-[#1e1b4b]/90 text-white font-bold rounded-lg flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed shadow-md shadow-[#1e1b4b]/20 mt-4 group text-sm"
                     >
+                        {/* Efeito Shiny Button - varredura de luz rápida */}
+                        <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent group-hover:animate-[shimmer_1.5s_infinite]" />
+
                         {isLoading ? (
-                            <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                         ) : (
                             <>
-                                {isLogin ? 'ENTRAR' : 'CRIAR'}
-                                <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                                {isLogin ? 'ENTRAR' : 'CRIAR CONTA'}
+                                <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />
                             </>
                         )}
                     </button>

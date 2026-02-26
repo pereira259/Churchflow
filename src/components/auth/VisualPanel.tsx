@@ -59,10 +59,11 @@ export function VisualPanel({ mode, onToggle }: VisualPanelProps) {
             {/* Crucifix Effect - Always Active */}
             <CrucifixEffect isActive={true} />
 
-            {/* Background Gradient Orbs (Static) */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#d4af37]/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2" />
-                <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-[#1e1b4b]/50 rounded-full blur-[100px] translate-y-1/2 -translate-x-1/2" />
+            {/* Background Gradient Orbs (Aurora Effect) */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-60">
+                <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-[#d4af37]/15 rounded-full blur-[120px] -translate-y-1/2 translate-x-1/2 animate-[spin_20s_linear_infinite]" />
+                <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-[#1e1b4b]/60 rounded-full blur-[120px] translate-y-1/2 -translate-x-1/2 animate-[spin_25s_linear_infinite_reverse]" />
+                <div className="absolute inset-0 bg-transparent mix-blend-overlay opacity-30 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPgo8cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiBmaWxsPSIjZmZmIiBmaWxsLW9wYWNpdHk9IjAuMDUiLz4KPC9zdmc+')]"></div>
             </div>
 
             <motion.div
@@ -73,17 +74,23 @@ export function VisualPanel({ mode, onToggle }: VisualPanelProps) {
             >
                 <ChurchFlowLogo className="w-10 h-10 mb-3 text-white" />
 
-                <h2 className="font-display text-xl font-bold mb-1">
-                    {isLogin ? 'Bem-vindo de volta!' : 'Olá!'}
+                <h2 className="font-display text-2xl font-bold tracking-tight mb-2">
+                    {isLogin ? 'A inovação na sua igreja' : 'Bem-vindo de volta!'}
                 </h2>
-                <p className="text-white/80 mb-4 text-xs max-w-[220px] leading-tight">
+                <p className="text-white/80 mb-6 text-sm max-w-[240px] leading-relaxed">
                     {isLogin
-                        ? 'Para continuar conectado, faça login com seus dados.'
-                        : 'Insira seus dados e comece sua jornada.'
+                        ? 'Uma nova forma de governar, gerir membros e expandir o Reino.'
+                        : 'Para continuar conectado, faça login com seus dados.'
                     }
                 </p>
 
-                <MiniCarousel />
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8, delay: 0.3 }}
+                >
+                    <MiniCarousel />
+                </motion.div>
 
                 <motion.button
                     type="button"
